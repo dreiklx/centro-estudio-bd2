@@ -8,7 +8,7 @@ Plataforma web de estudio que complementa al videojuego **Servidor Nocturno**. E
 - **Ejercicios prácticos generados:** concurrencia, grafo de precedencia, recuperabilidad, marcas de tiempo, cadena de respaldos, recuperación con el log y árboles de consulta. Se crean nuevos cada vez y se corrigen solos.
 - **Variedad en Practicar y Simulacro:** banco ampliado (263 preguntas del Examen 3, `js/preguntas-extra.js`) y preguntas generadas con valores al azar (`js/teoria-gen.js`). Cada intento muestra primero las preguntas menos vistas y baraja las opciones.
 - **Simulacro de examen:** de 10 a 20 preguntas teóricas más 10 ejercicios prácticos (concurrencia, planificación, respaldo, recuperación, optimización de consultas y MongoDB), con nota al entregar.
-- **Examen de prueba (MV):** las 80 preguntas del examen de prueba de Mediación Virtual en 4 bloques de 20 que mezclan temas (más uno aleatorio), cada uno con parte práctica. Sin tiempo. (`js/examen-mv.js`)
+- **Examen de prueba (MV):** las 80 preguntas del examen de prueba de Mediación Virtual en 4 bloques de 20 que mezclan temas (más uno aleatorio), cada uno con parte práctica (2 de planificación y 5 de escribir código SQL y MongoDB). Sin tiempo. (`js/examen-mv.js`)
 - **Laboratorio SQL:** 25 ejercicios, solo de los temas prácticos del examen: concurrencia y transacciones, respaldo y recuperación, y optimización de consultas. Las consultas se ejecutan en SQLite (sql.js) adaptando la sintaxis de SQL Server; las instrucciones de administración se revisan por su estructura.
 - **Laboratorio MongoDB:** 27 ejercicios con un intérprete MQL propio. Se compara el resultado o la colección final.
 - **Mi progreso:** se guarda en el navegador (`localStorage`).

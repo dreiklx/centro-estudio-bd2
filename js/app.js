@@ -613,10 +613,10 @@
     var pra = E.practica.map(function (it, i) {
       n++;
       var t = temaPorId[it.tipo === 'codigo' ? it.e.tema : it.tema];
-      var cab = '<div class="preg-cab"><span class="preg-n">' + n + '.</span><span class="chip suave" style="--uc:' + color(t.u) + '">' + esc(it.tipo === 'codigo' ? (it.lab === 'sql' ? 'Optimización SQL' : 'MongoDB') : it.titulo) + '</span><span class="chip">' + (it.max) + ' pts</span></div>';
+      var cab = '<div class="preg-cab"><span class="preg-n">' + n + '.</span><span class="chip suave" style="--uc:' + color(t.u) + '">' + esc(it.tipo === 'codigo' ? (it.lab === 'sql' ? 'SQL · ' + (LAB_SQL.GRUPOS.find(function (g) { return g.id === it.e.g; }) || {}).titulo : 'MongoDB') : it.titulo) + '</span><span class="chip">' + (it.max) + ' pts</span></div>';
       if (it.tipo === 'gen') return '<div class="tarjeta sim-item practico" data-k="p' + i + '">' + cab + it.html + '<div class="sim-corr"></div></div>';
       var ex = it.e;
-      return '<div class="tarjeta sim-item" data-k="p' + i + '">' + cab + '<p class="enunciado">' + ex.enunciado + '</p>' + (it.lab === 'sql' ? esquemaSQL(ex.db) : esquemaMongo(ex.datos)) +
+      return '<div class="tarjeta sim-item" data-k="p' + i + '">' + cab + '<p class="enunciado">' + ex.enunciado + '</p>' + (it.lab === 'sql' ? (ex.db ? esquemaSQL(ex.db) : '') : esquemaMongo(ex.datos)) +
         '<div class="editor-caja"><div class="editor-cab"><span>' + (it.lab === 'sql' ? 'SQL Server (T-SQL)' : 'MongoDB Shell (MQL)') + '</span></div><textarea class="editor" spellcheck="false" autocapitalize="off" data-cod="' + i + '" aria-label="Respuesta del ejercicio ' + n + '"></textarea></div><div class="sim-corr"></div></div>';
     }).join('');
     return '<div class="contenedor estrecho"><div class="barra-examen tarjeta"><div><b>' + esc(titulo) + '</b> · ' + (E.mv ? 'sin tiempo' : '<span id="simReloj">00:00</span>') + ' · <span id="simResp"></span></div><button class="btn primario" id="entregar"' + (E.entregado ? ' hidden' : '') + '>' + ICON('check') + 'Entregar</button><button class="btn" id="nuevoSim"' + (E.entregado ? '' : ' hidden') + '>' + ICON('refresh') + 'Nuevo intento</button></div>' +
@@ -655,7 +655,7 @@
         registrar(q, ok); if (!q.gen) { P.vistosSim = P.vistosSim || {}; P.vistosSim[q.id] = (P.vistosSim[q.id] || 0) + 1; }
       });
       var pendientes = E.practica.map(function (it, i) {
-        var card = raiz.querySelector('[data-k="p' + i + '"]'), cat = it.tipo === 'gen' ? it.titulo : (it.lab === 'sql' ? 'Optimización SQL' : 'MongoDB');
+        var card = raiz.querySelector('[data-k="p' + i + '"]'), cat = it.tipo === 'gen' ? it.titulo : (it.lab === 'sql' ? 'SQL · ' + (LAB_SQL.GRUPOS.find(function (g) { return g.id === it.e.g; }) || {}).titulo : 'MongoDB');
         function anotar(p, max, html, clase) { pp += p; mp += max; porCat[cat] = porCat[cat] || [0, 0]; porCat[cat][0] += p; porCat[cat][1] += max; card.querySelector('.sim-corr').innerHTML = '<div class="retro ' + clase + '"><div class="retro-tit">' + ICON(clase === 'ok' ? 'ok' : clase === 'bad' ? 'bad' : 'alert') + p + ' de ' + max + ' puntos</div>' + html + '</div>'; }
         card.querySelectorAll('input,select,textarea').forEach(function (x) { x.disabled = true; });
         if (it.tipo === 'gen') { var r = it.corregir(card); anotar(r.puntos, r.max, r.html, r.puntos === r.max ? 'ok' : r.puntos ? 'aviso' : 'bad'); return Promise.resolve(); }
@@ -688,7 +688,6 @@
 
   /* ------------------------- examen de prueba (Mediación Virtual) ------------------------- */
   var EXAMEN_MVA = null;
-  var PRACT_MV = [['concurrencia', 'conflictos', 'respaldo', 'arbol'], ['log', 'recuperabilidad', 'respaldo', 'marcas'], ['concurrencia', 'marcas', 'log', 'arbol'], ['conflictos', 'recuperabilidad', 'respaldo', 'log']];
   function crearExamenMV(b) {
     var seed = Date.now() >>> 0, mix = b === 'mix';
     var lista = mix ? barajar(EXAMEN_MV.PREGUNTAS, seed).slice(0, 20) : EXAMEN_MV.BLOQUES[b];
@@ -696,11 +695,15 @@
       return { id: 'mv-' + p.n, t: 'mc', q: p.q, o: [p.o[p.c]].concat(p.o.filter(function (_, i) { return i !== p.c; })), e: p.e + (p.v ? ' (Depende de un artículo de las investigaciones: conviene verificarla.)' : ''), tema: EXAMEN_MV.TEMA[p.g], gen: true, d: 2, grupo: p.g };
     });
     prepararOpciones(teoria, seed);
-    var cats = mix ? barajar(Object.keys(PRACTICO.GEN), seed).slice(0, 4) : PRACT_MV[b];
-    var practica = cats.map(function (cat, i) { var it = PRACTICO.generar(cat, seed + i * 977); it.tipo = 'gen'; return it; });
-    var sqlOpt = LAB_SQL.EJERCICIOS.filter(function (e) { return e.g === 'I' && e.tipo === 'consulta'; });
-    practica.push({ tipo: 'codigo', lab: 'sql', e: barajar(sqlOpt, seed)[0], max: 2 });
-    practica.push({ tipo: 'codigo', lab: 'mongo', e: barajar(LAB_MONGO.EJERCICIOS, seed + 1)[0], max: 2 });
+    // Parte práctica: minoría de grafos (serializable / recuperable) y mayoría de código
+    var practica = ['conflictos', 'recuperabilidad'].map(function (cat, i) { var it = PRACTICO.generar(cat, seed + i * 977); it.tipo = 'gen'; return it; });
+    ['G', 'H', 'I'].forEach(function (g, i) {
+      var del = LAB_SQL.EJERCICIOS.filter(function (e) { return e.g === g; });
+      practica.push({ tipo: 'codigo', lab: 'sql', e: barajar(del, seed + 31 * (i + 1))[0], max: 2 });
+    });
+    var mf = LAB_MONGO.EJERCICIOS.filter(function (e) { return e.tipo === 'find' && e.nivel >= 2; }), me = LAB_MONGO.EJERCICIOS.filter(function (e) { return e.tipo === 'escritura'; });
+    practica.push({ tipo: 'codigo', lab: 'mongo', e: barajar(mf, seed + 7)[0], max: 2 });
+    practica.push({ tipo: 'codigo', lab: 'mongo', e: barajar(me, seed + 13)[0], max: 2 });
     return { teoria: teoria, practica: practica, inicio: Date.now(), entregado: false, mv: true, bloque: b };
   }
   function bloqueDeArg(arg) { if (arg === 'aleatorio') return 'mix'; var n = parseInt(arg, 10); return n >= 1 && n <= 4 ? n - 1 : null; }
@@ -716,12 +719,12 @@
       var r = res[id === 'aleatorio' ? 'mix' : (+id - 1)];
       return '<a class="tarjeta acceso" href="#/mv/' + id + '" style="--uc:' + uc + '"><span class="ico-caja">' + ICON('check') + '</span><h3>' + titulo + '</h3><p>' + desc + '</p>' + (r ? '<p class="peq"><b>Último resultado: ' + r.nota + '/100</b></p>' : '') + '</a>';
     }
-    return '<div class="contenedor"><div class="encabezado"><h1>Examen de prueba (Mediación Virtual)</h1><p>Las <b>80 preguntas</b> del examen de prueba del curso, repartidas en <b>4 bloques de 20</b> que mezclan temas. Cada bloque incluye además una <b>parte práctica</b> (concurrencia, planificación, respaldo, recuperación, optimización y MongoDB). <b>Sin tiempo</b>: responda y entregue cuando quiera para ver la corrección. Las opciones cambian de orden en cada intento.</p></div>' +
+    return '<div class="contenedor"><div class="encabezado"><h1>Examen de prueba (Mediación Virtual)</h1><p>Las <b>80 preguntas</b> del examen de prueba del curso, repartidas en <b>4 bloques de 20</b> que mezclan temas. Cada bloque incluye una <b>parte práctica</b>: 2 de planificación (armar el grafo de precedencia y decidir si es serializable; decidir si una planificación es recuperable) y <b>5 de escribir código</b>: SQL de concurrencia, de respaldo y recuperación y de optimización, y 2 de MongoDB. <b>Sin tiempo</b>: responda y entregue cuando quiera para ver la corrección. Las opciones cambian de orden en cada intento.</p></div>' +
       '<div class="rejilla">' + [1, 2, 3, 4].map(function (n) {
         var bl = EXAMEN_MV.BLOQUES[n - 1], cuenta = {};
         bl.forEach(function (p) { cuenta[p.g] = (cuenta[p.g] || 0) + 1; });
-        return tarjeta(String(n), 'Bloque ' + n, '20 preguntas: ' + Object.keys(cuenta).map(function (g) { return EXAMEN_MV.NOMBRE[g].toLowerCase() + ' (' + cuenta[g] + ')'; }).join(', ') + '. Parte práctica: ' + PRACT_MV[n - 1].map(function (c) { return PRACTICO.GEN[c].titulo.toLowerCase(); }).join(', ') + ', optimización SQL y MongoDB.', 'var(--u' + (n + 4) + ')');
-      }).join('') + tarjeta('aleatorio', 'Bloque aleatorio', '20 preguntas al azar de las 80 y una parte práctica distinta cada vez.', 'var(--u7)') + '</div>' +
+        return tarjeta(String(n), 'Bloque ' + n, '20 preguntas: ' + Object.keys(cuenta).map(function (g) { return EXAMEN_MV.NOMBRE[g].toLowerCase() + ' (' + cuenta[g] + ')'; }).join(', ') + '. Práctica: grafo de precedencia, recuperabilidad, 3 de SQL y 2 de MongoDB.', 'var(--u' + (n + 4) + ')');
+      }).join('') + tarjeta('aleatorio', 'Bloque aleatorio', '20 preguntas al azar de las 80, con la misma parte práctica: 2 de planificación y 5 de código.', 'var(--u7)') + '</div>' +
       '<p class="muted peq" style="margin-top:16px">Mediación Virtual no mostraba la clave de respuestas: las respuestas se determinaron con el material del curso. Las preguntas 35, 40, 49 y 56 dependen de artículos de las investigaciones y su explicación lo indica.</p></div>';
   }
 
