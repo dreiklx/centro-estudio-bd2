@@ -4,7 +4,9 @@ Plataforma web de estudio que complementa al videojuego **Servidor Nocturno**. E
 
 - **Estudiar:** 44 temas en 10 unidades, tomados de las Guías #1 a #13, el programa del curso y el resumen de las investigaciones finales.
 - **Practicar:** 275 preguntas: selección única, verdadero o falso, aplicación numérica y comprensión. Cada una tiene dificultad y explicación.
-- **Laboratorio SQL:** 66 ejercicios. Las consultas se ejecutan en SQLite (sql.js) adaptando la sintaxis de SQL Server. Las instrucciones de administración (índices, permisos, procedimientos, triggers, respaldos, servidores vinculados) se revisan por su estructura.
+- **Ejercicios prácticos generados:** concurrencia, grafo de precedencia, recuperabilidad, marcas de tiempo, cadena de respaldos, recuperación con el log y árboles de consulta. Se crean nuevos cada vez y se corrigen solos.
+- **Simulacro de examen:** de 10 a 20 preguntas teóricas más 10 ejercicios prácticos (concurrencia, planificación, respaldo, recuperación, optimización de consultas y MongoDB), con nota al entregar.
+- **Laboratorio SQL:** 69 ejercicios. Las consultas se ejecutan en SQLite (sql.js) adaptando la sintaxis de SQL Server. Las instrucciones de administración (índices, permisos, procedimientos, triggers, respaldos, servidores vinculados) se revisan por su estructura.
 - **Laboratorio MongoDB:** 27 ejercicios con un intérprete MQL propio. Se compara el resultado o la colección final.
 - **Mi progreso:** se guarda en el navegador (`localStorage`).
 - **Cobertura del temario:** matriz documento, tema, subtema y sección (también en `COBERTURA.md`).
@@ -22,6 +24,7 @@ js/datos-sql.js       bases de práctica y ejercicios SQL
 js/datos-mongo.js     colecciones y ejercicios MongoDB
 js/motor-sql.js       traducción T-SQL, ejecución y calificación
 js/motor-mongo.js     intérprete MQL y calificación
+js/practico.js        generadores de ejercicios prácticos
 js/app.js             rutas, vistas, buscador y progreso
 vendor/               sql.js 1.10.3 (SQLite en WebAssembly)
 ```

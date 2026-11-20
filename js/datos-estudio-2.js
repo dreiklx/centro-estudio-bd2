@@ -7,7 +7,7 @@
     id: 'fallas-respaldo', u: 'u6', titulo: 'Fallas, respaldo y modelos de recuperación', min: 6,
     resumen: 'Backup vs recovery, tipos de fallas, respaldos FULL, DIFFERENTIAL y LOG, y el modelo de recuperación.',
     fuentes: ['G10', 'PR'],
-    cubre: [['G10', 'Conceptos', 'Respaldo (backup) y recuperación (recovery)'], ['G10', 'Tipos de fallas', 'De transacción, del sistema, del disco'], ['G10', 'Modelo de respaldo en SQL Server', 'Tabla FULL, DIFFERENTIAL, LOG'], ['G10', 'Modelo de recuperación', 'sys.databases recovery_model_desc; ALTER DATABASE SET RECOVERY FULL'], ['PR', '6.1 · 6.3 · 6.4', 'Conceptos de recuperación; recuperación de múltiples BD; copia de seguridad ante fallos catastróficos'], ['PR', '6.2', 'Algoritmos: actualización diferida, inmediata, páginas sombra y ARIES (solo nombrados en el programa)']],
+    cubre: [['G10', 'Conceptos', 'Respaldo (backup) y recuperación (recovery)'], ['G8', 'Log de transacciones (WAL)', 'Recuperación tras una caída: rehacer lo confirmado y deshacer lo no confirmado'], ['G10', 'Tipos de fallas', 'De transacción, del sistema, del disco'], ['G10', 'Modelo de respaldo en SQL Server', 'Tabla FULL, DIFFERENTIAL, LOG'], ['G10', 'Modelo de recuperación', 'sys.databases recovery_model_desc; ALTER DATABASE SET RECOVERY FULL'], ['PR', '6.1 · 6.3 · 6.4', 'Conceptos de recuperación; recuperación de múltiples BD; copia de seguridad ante fallos catastróficos'], ['PR', '6.2', 'Algoritmos: actualización diferida, inmediata, páginas sombra y ARIES (solo nombrados en el programa)']],
     html: function () {
       return K([['Respaldo (backup)', 'Copia de seguridad de la BD en un momento determinado. Permite restaurar ante fallas físicas o lógicas.'], ['Recuperación (recovery)', 'Proceso de llevar la BD a un estado <b>coherente</b> después de una falla, usando los <b>archivos de respaldo</b> y los <b>logs de transacciones</b>.']]) +
         '<h2>Tipos de fallas</h2>' +
@@ -22,7 +22,17 @@
         '<h2>Modelo de recuperación</h2>' +
         C("-- ¿Qué modelo usa la base?\nSELECT name, recovery_model_desc\nFROM sys.databases\nWHERE name = 'MiBaseDeDatos';\n\n-- Cambiarlo\nALTER DATABASE MiBaseDeDatos SET RECOVERY FULL;") +
         '<p>Para respaldar el log, la base debe estar en modelo <b>FULL</b> o <b>BULK_LOGGED</b>.</p>' +
-        BOX('info', '<b>Lo que nombra el programa (6.2)</b>Algoritmos de recuperación por actualización diferida, actualización inmediata, páginas sombra y ARIES. Las guías no los desarrollan; el material práctico se concentra en el log (WAL) y en BACKUP/RESTORE.');
+        '<h2>Recuperación tras una caída usando el log</h2>' +
+        '<p>El log WAL (Guía #8) guarda cada cambio <b>antes</b> de aplicarlo: qué transacción escribió, qué dato, el <b>valor anterior</b> y el <b>valor nuevo</b>, además de los COMMIT. Tras una falla del sistema, el motor lo recorre y decide transacción por transacción:</p>' +
+        TB(['Situación en el log al momento de la caída', 'Acción', 'Por qué'], [
+          ['La transacción tiene <b>COMMIT</b> registrado', '<b>REHACER</b> (redo): volver a aplicar sus valores nuevos', 'Durabilidad: lo confirmado debe permanecer aunque no hubiera llegado al disco'],
+          ['La transacción <b>no</b> tiene COMMIT (estaba activa o hizo ROLLBACK)', '<b>DESHACER</b> (undo): restaurar sus valores anteriores', 'Atomicidad: no puede quedar a medias']
+        ]) +
+        '<h3>Ejemplo</h3>' +
+        C("Inicio: A = 100, B = 50\n<T1, A, 100 → 80>\n<T2, B, 50 → 70>\n<T1 COMMIT>\n<T2, B, 70 → 90>\n*** CAÍDA ***", 'txt') +
+        '<p>T1 tiene COMMIT → se rehace: <b>A = 80</b>. T2 no tiene COMMIT → se deshacen sus dos escrituras, de la última a la primera: B vuelve a 70 y luego a <b>50</b>.</p>' +
+        BOX('tip', '<b>Regla rápida</b>Valor final de un dato = el de la <b>última escritura confirmada</b>; si ninguna transacción confirmada lo escribió, vuelve a su valor inicial.') +
+        BOX('info', '<b>Lo que nombra el programa (6.2)</b>Algoritmos de recuperación por actualización diferida, actualización inmediata, páginas sombra y ARIES. Las guías no los desarrollan; la idea de rehacer lo confirmado y deshacer lo no confirmado es la que aplica el log WAL de la Guía #8.');
     }
   });
 
@@ -30,7 +40,7 @@
     id: 'backup-restore', u: 'u6', titulo: 'Comandos BACKUP y RESTORE', min: 5,
     resumen: 'BACKUP DATABASE (FORMAT, INIT, DIFFERENTIAL), BACKUP LOG, sp_addumpdevice y RESTORE.',
     fuentes: ['G10', 'INV'],
-    cubre: [['G10', 'Respaldo completo', 'BACKUP DATABASE ... WITH FORMAT, INIT, NAME; FULL implícito'], ['G10', 'Respaldo diferencial', 'WITH DIFFERENTIAL; restaurar FULL + DIFFERENTIAL'], ['G10', 'Respaldo del log', 'BACKUP LOG ... .trn; FULL o BULK_LOGGED; point-in-time'], ['G10', 'Dispositivos y restauración', 'sp_addumpdevice; RESTORE DATABASE ... WITH RECOVERY, REPLACE']],
+    cubre: [['G10', 'Respaldo completo', 'BACKUP DATABASE ... WITH FORMAT, INIT, NAME; FULL implícito'], ['G10', 'Respaldo diferencial', 'WITH DIFFERENTIAL; restaurar FULL + DIFFERENTIAL'], ['G10', 'Respaldo del log', 'BACKUP LOG ... .trn; FULL o BULK_LOGGED; point-in-time'], ['G10', 'Dispositivos y restauración', 'sp_addumpdevice; RESTORE DATABASE ... WITH RECOVERY, REPLACE'], ['G10', 'Aplicación de los tipos de respaldo', 'Orden de restauración: FULL + último DIFFERENTIAL + LOG posteriores']],
     html: function () {
       return '<h2>1. Completo (FULL)</h2>' +
         C("BACKUP DATABASE MiBaseDeDatos\nTO DISK = 'C:\\Respaldo\\MiBaseDeDatos_FULL.bak'\nWITH FORMAT, INIT, NAME = 'Respaldo completo';") +
@@ -43,6 +53,13 @@
         '<h2>Dispositivo de respaldo y restauración</h2>' +
         C("EXEC sp_addumpdevice 'disk', 'RESPALDO', 'C:\\BD\\RESPALDO.BAK';\n\nRESTORE DATABASE BARES\nFROM DISK = 'C:\\RESPALDO\\BARES_FULL.BAK'\nWITH RECOVERY, REPLACE;") +
         TB(['Opción', 'Efecto'], [['<code>RECOVERY</code>', 'Deja la base operativa al terminar la restauración'], ['<code>REPLACE</code>', 'Permite sobrescribir una base existente']]) +
+        '<h2>Restaurar una cadena de respaldos</h2>' +
+        '<p>Aplicando las reglas de la guía (el diferencial contiene los cambios desde el último FULL; cada LOG, los cambios desde el LOG anterior), para recuperar lo más reciente posible se restaura en este orden:</p>' +
+        D(['1. Último FULL', '2. Último DIFFERENTIAL posterior a ese FULL', '3. Todos los LOG posteriores a ese diferencial, en orden']) +
+        '<h3>Ejemplo</h3>' +
+        TB(['Programa de respaldos', 'Falla'], [['FULL el domingo 00:00 · DIFFERENTIAL de lunes a sábado 00:00 · LOG a las 06:00, 12:00 y 18:00', 'Miércoles 15:00']]) +
+        '<p>Se necesitan: FULL del domingo → DIFFERENTIAL del miércoles 00:00 → LOG del miércoles 06:00 → LOG del miércoles 12:00. Los diferenciales del lunes y martes sobran (el del miércoles ya los incluye) y también los LOG anteriores a ese diferencial. Se pierde lo hecho después de las 12:00.</p>' +
+        BOX('warn', '<b>Errores frecuentes</b>Restaurar todos los diferenciales (solo hace falta el último) · omitir un LOG intermedio (la cadena de logs debe estar completa) · olvidar que sin el FULL ningún otro respaldo sirve.') +
         BOX('tip', '<b>Verifique sus respaldos</b>Las investigaciones recomiendan restaurar la copia en una instancia de prueba y comprobar que el esquema y los registros esperados estén disponibles.');
     }
   });

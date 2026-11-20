@@ -123,8 +123,12 @@
     return db;
   }
   function ejecutar(db, sql) {
-    var res = db.exec(traducir(sql));
-    return res.length ? res[res.length - 1] : null;
+    var t = traducir(sql), res = db.exec(t);
+    if (res.length) return res[res.length - 1];
+    // SELECT sin filas: sql.js no devuelve tabla; se obtienen las columnas igual
+    var ult = t.split(';').map(function (x) { return x.trim(); }).filter(Boolean).pop() || '';
+    if (/^(SELECT|WITH)\b/i.test(ult)) { var st = db.prepare(ult); var cols = st.getColumnNames(); st.free(); return { columns: cols, values: [] }; }
+    return null;
   }
   function volcar(db, tabla) {
     var r = db.exec('SELECT * FROM ' + tabla + ' ORDER BY 1');

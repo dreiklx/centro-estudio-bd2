@@ -469,6 +469,26 @@
     checks: [["DBCC SHOW_STATISTICS\\('?EMPLEADOS'?,'?IDX_FECHA'?\\)", "Use DBCC SHOW_STATISTICS('Empleados', 'idx_fecha')"], ['UPDATE STATISTICS EMPLEADOS', 'Falta UPDATE STATISTICS Empleados']],
     explicacion: 'Estadísticas actualizadas mejoran las estimaciones del optimizador basado en costos.' });
 
+  ej({ g: 'I', n: 6, tema: 'optimizacion-practica', titulo: 'IN a EXISTS', tipo: 'consulta', db: 'taller', nivel: 3,
+    enunciado: 'La Guía #11 recomienda <b>EXISTS en lugar de IN</b> para subconsultas con muchas filas. Reescriba con EXISTS: <code>SELECT nombre FROM Empleados WHERE departamento_id IN (SELECT id FROM Departamentos WHERE activo = 1)</code>.',
+    pista: 'WHERE EXISTS (SELECT 1 FROM Departamentos D WHERE D.id = E.departamento_id AND D.activo = 1)',
+    solucion: 'SELECT E.nombre\nFROM Empleados E\nWHERE EXISTS (SELECT 1 FROM Departamentos D\n              WHERE D.id = E.departamento_id AND D.activo = 1);',
+    requerido: [['EXISTS', 'Se pidió usar EXISTS']],
+    prohibido: [['IN ?\\(SELECT', 'Todavía usa IN (SELECT …)']],
+    explicacion: 'EXISTS se detiene en cuanto encuentra una fila que cumple; la subconsulta se relaciona con la fila externa por E.departamento_id.' });
+  ej({ g: 'I', n: 7, tema: 'optimizacion-practica', titulo: 'Mes completo sin funciones', tipo: 'consulta', db: 'taller', nivel: 2,
+    enunciado: 'Reescriba sin funciones sobre la columna: <code>SELECT * FROM Empleados WHERE YEAR(fecha_contratacion) = 2022 AND MONTH(fecha_contratacion) = 11</code>.',
+    pista: "Noviembre de 2022 completo: BETWEEN '2022-11-01' AND '2022-11-30'.",
+    solucion: "SELECT * FROM Empleados\nWHERE fecha_contratacion BETWEEN '2022-11-01' AND '2022-11-30';",
+    prohibido: [['(YEAR|MONTH|DATEPART|CONVERT|CAST)\\( ?FECHA_CONTRATACION', 'Todavía aplica una función sobre fecha_contratacion']],
+    explicacion: 'Mismo resultado, pero ahora el optimizador puede usar un índice sobre fecha_contratacion.' });
+  ej({ g: 'I', n: 8, tema: 'optimizacion-practica', titulo: 'Solo las columnas necesarias', tipo: 'consulta', db: 'taller', nivel: 2,
+    enunciado: 'Muestre <b>nombre</b> y <b>salario</b> de los empleados contratados en <b>2021</b>, aplicando dos estrategias de la Guía #11: <b>sin SELECT *</b> y <b>sin funciones</b> sobre la columna de fecha.',
+    pista: "SELECT nombre, salario … WHERE fecha_contratacion BETWEEN '2021-01-01' AND '2021-12-31'",
+    solucion: "SELECT nombre, salario FROM Empleados\nWHERE fecha_contratacion BETWEEN '2021-01-01' AND '2021-12-31';",
+    prohibido: [['SELECT \\*', 'Evite SELECT *: seleccione solo las columnas necesarias'], ['(YEAR|MONTH|DATEPART|CONVERT|CAST)\\( ?FECHA_CONTRATACION', 'Todavía aplica una función sobre fecha_contratacion']],
+    explicacion: 'Menos columnas = menos datos leídos y transferidos; el rango permite usar índices.' });
+
   /* ---------------- J · BD distribuidas ---------------- */
   ej({ g: 'J', n: 1, tema: 'servidores-vinculados', titulo: 'Crear el servidor vinculado', tipo: 'estructura', nivel: 2,
     enunciado: "Cree el servidor vinculado <b>Sucursal2</b> con proveedor <b>MSOLEDBSQL</b>, producto vacío y origen de datos <code>'192.168.42.213,1433'</code>.",

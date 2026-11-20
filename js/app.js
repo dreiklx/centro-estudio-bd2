@@ -16,7 +16,7 @@
 
   /* ------------------------- progreso ------------------------- */
   var CLAVE = 'ceBD.v1';
-  var P = { leidos: {}, preg: {}, sql: {}, mongo: {}, borr: {}, ultimo: null };
+  var P = { leidos: {}, preg: {}, sql: {}, mongo: {}, borr: {}, ultimo: null, simulacros: [] };
   try { var g = JSON.parse(localStorage.getItem(CLAVE) || 'null'); if (g) P = Object.assign(P, g); } catch (e) { /* sin almacenamiento */ }
   function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(P)); } catch (e) { /* ignorar */ } }
 
@@ -123,6 +123,7 @@
       acceso('#/practicar', 'check', 'u5', 'Practicar', TODAS_PREG.length + ' preguntas por tema y dificultad.') +
       acceso('#/sql', 'code', 'u8', 'Laboratorio SQL', LAB_SQL.EJERCICIOS.length + ' ejercicios progresivos.') +
       acceso('#/mongo', 'leaf', 'u9', 'Laboratorio MongoDB', LAB_MONGO.EJERCICIOS.length + ' ejercicios de la Guía #13.') +
+      acceso('#/simulacro', 'target', 'u7', 'Simulacro de examen', '10 a 20 preguntas teóricas y ejercicios prácticos, con nota.') +
       '</div>' +
       '<div class="tarjeta"><div class="resumen-quiz"><div><h2 style="margin:0">Su avance general</h2><p class="muted peq" style="margin:4px 0 0">Se guarda en este navegador.</p></div>' +
       '<div class="anillo" style="--p:' + pct(hechos, total) + '"><span>' + pct(hechos, total) + '%</span></div></div>' +
@@ -177,7 +178,11 @@
     }).join('');
     return '<div class="contenedor"><div class="encabezado"><h1>Practicar</h1><p>Preguntas de selección única, verdadero o falso, comprensión y aplicación, organizadas por tema y dificultad. Todas evalúan lo que se explica en la sección Estudiar.</p></div>' +
       '<div class="tarjeta" style="margin-bottom:22px"><div class="resumen-quiz"><div><h2 style="margin:0">Repaso mixto</h2><p class="muted peq" style="margin:4px 0 0">12 preguntas al azar de los temas que ya marcó como estudiados (o de todos, si aún no marca ninguno).</p></div><a class="btn primario" href="#/practicar/mixta">' + ICON('refresh') + 'Iniciar repaso</a></div>' +
-      '<p class="muted peq" style="margin:12px 0 0">Acertadas en total: <b>' + s.qok + '</b> de ' + s.q + '.</p></div>' + html + '</div>';
+      '<p class="muted peq" style="margin:12px 0 0">Acertadas en total: <b>' + s.qok + '</b> de ' + s.q + '.</p></div>' +
+      '<section class="unidad"><div class="unidad-cab"><span class="unidad-num" style="--uc:var(--u5)">' + ICON('target') + '</span><div><h2>Ejercicios prácticos</h2><small>Se generan nuevos cada vez y se corrigen solos: lo práctico del examen.</small></div></div>' +
+      '<div class="rejilla">' + Object.keys(PRACTICO.GEN).map(function (k) { var g = PRACTICO.GEN[k], t = temaPorId[g.tema]; return '<a class="tarjeta acceso" href="#/practico/' + k + '" style="--uc:' + color(t.u) + '"><span class="ico-caja">' + ICON(g.icono) + '</span><h3>' + esc(g.titulo) + '</h3><p>' + esc(g.desc) + '</p></a>'; }).join('') +
+      '<a class="tarjeta acceso" href="#/simulacro" style="--uc:var(--u7)"><span class="ico-caja">' + ICON('check') + '</span><h3>Simulacro de examen</h3><p>Teoría más práctica, con nota al final.</p></a></div></section>' +
+      html + '</div>';
   }
 
   var filtroDif = 0, semillaMixta = Date.now();
@@ -431,6 +436,7 @@
     return '<div class="contenedor"><div class="encabezado"><h1>Mi progreso</h1><p>El avance se guarda solo en este navegador y dispositivo.</p></div>' +
       '<div class="rejilla" style="margin-bottom:22px">' +
       tarjetaStat('Temas estudiados', s.leidos, s.temas, 'u1') + tarjetaStat('Preguntas acertadas', s.qok, s.q, 'u5') + tarjetaStat('Ejercicios SQL', s.sqlOk, s.sql, 'u8') + tarjetaStat('Ejercicios MongoDB', s.mOk, s.mongo, 'u9') + '</div>' +
+      ((P.simulacros || []).length ? '<div class="tarjeta" style="margin-bottom:22px"><h2>Simulacros</h2>' + P.simulacros.slice(-5).reverse().map(function (h) { return '<div class="prog-fila"><span>' + new Date(h.fecha).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' }) + ' · teoría ' + h.teo + ' · práctica ' + h.prac + '</span>' + barra(h.nota) + '<span class="num">' + h.nota + '/100</span></div>'; }).join('') + '<p style="margin:10px 0 0"><a href="#/simulacro">Hacer otro simulacro →</a></p></div>' : '') +
       (Object.keys(temasRep).length ? '<div class="tarjeta" style="margin-bottom:22px"><h2>Para repasar</h2><p class="muted peq">Temas con preguntas que todavía no acierta.</p><div class="chips">' + Object.keys(temasRep).map(function (k) { return '<a class="chip suave" style="--uc:' + color(temaPorId[k].u) + '" href="#/practicar/' + k + '">' + esc(temaPorId[k].titulo) + ' (' + temasRep[k] + ')</a>'; }).join('') + '</div></div>' : '') +
       filas +
       '<div class="tarjeta"><h2>Reiniciar</h2><p class="muted peq">Borra temas estudiados, respuestas y ejercicios resueltos de este navegador.</p><button class="btn" id="borrar">' + ICON('trash') + (confirmarBorrado ? '¿Seguro? Pulse otra vez para borrar todo' : 'Borrar mi progreso') + '</button></div></div>';
@@ -495,6 +501,134 @@
   $velo.addEventListener('click', function () { menu(false); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && $nav.classList.contains('abierto')) menu(false); });
 
+  /* ------------------------- práctica generada ------------------------- */
+  var semillaPractico = Date.now();
+  function vPractico(cat) {
+    var g = PRACTICO.GEN[cat]; if (!g) return vNoEncontrado();
+    var it = PRACTICO.generar(cat, semillaPractico), t = temaPorId[it.tema];
+    vPractico.actual = it;
+    return '<div class="contenedor estrecho" style="--uc:' + color(t.u) + '"><nav class="miga"><a href="#/practicar">Practicar</a><span>/</span><span>Ejercicios prácticos</span></nav>' +
+      '<header class="tema-cab"><div class="chips"><span class="chip u">Práctico</span><span class="chip suave">Se genera uno nuevo cada vez</span></div><h1>' + esc(g.titulo) + '</h1><p class="muted">' + esc(g.desc) + ' Repase: <a href="#/tema/' + t.id + '">' + esc(t.titulo) + '</a>.</p></header>' +
+      '<div class="tarjeta practico" id="practico">' + it.html + '<div class="acciones" style="margin-top:14px"><button class="btn primario" id="pComprobar">' + ICON('play') + 'COMPROBAR</button><button class="btn" id="pOtro">' + ICON('refresh') + 'Otro ejercicio</button></div><div id="pSalida" aria-live="polite"></div></div>' +
+      '<div class="chips" style="margin-top:16px">' + Object.keys(PRACTICO.GEN).filter(function (k) { return k !== cat; }).map(function (k) { return '<a class="chip suave" href="#/practico/' + k + '">' + esc(PRACTICO.GEN[k].titulo) + '</a>'; }).join('') + '</div></div>';
+  }
+  function enlazarPractico(raiz, cat) {
+    var c = raiz.querySelector('#pComprobar'), o = raiz.querySelector('#pOtro'); if (!c) return;
+    c.addEventListener('click', function () {
+      var r = vPractico.actual.corregir(raiz.querySelector('#practico')), ok = r.puntos === r.max;
+      raiz.querySelector('#pSalida').innerHTML = '<div class="retro ' + (ok ? 'ok' : r.puntos ? 'aviso' : 'bad') + '"><div class="retro-tit">' + ICON(ok ? 'ok' : r.puntos ? 'alert' : 'bad') + (ok ? '¡Todo correcto!' : 'Obtuvo ' + r.puntos + ' de ' + r.max) + '</div>' + r.html + '</div>';
+      var k = 'prac-' + cat; P.preg[k] = P.preg[k] || { ok: false, n: 0 }; P.preg[k].n++; if (ok) P.preg[k].ok = true; guardar();
+      decorarCodigo(raiz);
+    });
+    o.addEventListener('click', function () { semillaPractico = Date.now(); render(); window.scrollTo(0, 0); });
+  }
+
+  /* ------------------------- simulacro de examen ------------------------- */
+  var TEMAS_EXAMEN = ['transacciones', 'aislamiento', 'planificacion', 'recuperabilidad', 'bloqueos', 'marcas-tiempo', 'fallas-respaldo', 'backup-restore', 'optimizacion-proceso', 'optimizacion-practica', 'bdd-conceptos', 'servidores-vinculados', 'mongo-conceptos', 'mongo-crud', 'inv-fundamentos', 'inv-transacciones', 'inv-frameworks', 'inv-proteccion', 'inv-contenedores', 'inv-nosql', 'inv-redis', 'inv-semantica', 'inv-procesos'];
+  var EXAMEN = null, nTeoria = 15, reloj = null;
+  function crearExamen(n) {
+    var seed = Date.now() >>> 0;
+    var pool = [].concat.apply([], TEMAS_EXAMEN.map(function (k) { return PREG[k].filter(function (q) { return q.t === 'mc' || q.t === 'vf'; }); }));
+    var teoria = barajar(pool, seed).slice(0, n);
+    var practica = ['concurrencia', 'conflictos', 'recuperabilidad', 'marcas', 'respaldo', 'log', 'arbol'].map(function (cat, i) { var it = PRACTICO.generar(cat, seed + i * 977); it.tipo = 'gen'; return it; });
+    var sqlOpt = LAB_SQL.EJERCICIOS.filter(function (e) { return e.g === 'I' && e.tipo === 'consulta'; });
+    practica.push({ tipo: 'codigo', lab: 'sql', e: barajar(sqlOpt, seed)[0], max: 2, cat: 'optimizacion' });
+    var mf = LAB_MONGO.EJERCICIOS.filter(function (e) { return e.tipo === 'find' && e.nivel >= 2; }), me = LAB_MONGO.EJERCICIOS.filter(function (e) { return e.tipo === 'escritura'; });
+    practica.push({ tipo: 'codigo', lab: 'mongo', e: barajar(mf, seed + 1)[0], max: 2, cat: 'mongo' });
+    practica.push({ tipo: 'codigo', lab: 'mongo', e: barajar(me, seed + 2)[0], max: 2, cat: 'mongo' });
+    return { teoria: teoria, practica: practica, inicio: Date.now(), entregado: false };
+  }
+  function vSimulacro() {
+    if (!EXAMEN) {
+      var hist = (P.simulacros || []).slice(-5).reverse();
+      return '<div class="contenedor estrecho"><div class="encabezado"><h1>Simulacro de examen</h1><p>Sigue el formato que indicó el profesor: <b>de 10 a 20 preguntas teóricas</b> y el resto <b>práctico</b>: concurrencia, planificación, respaldo, recuperación, optimización de consultas y MongoDB. Cada simulacro es distinto.</p></div>' +
+        '<div class="tarjeta"><h2>Configurar</h2><label for="nTeo"><b>Preguntas teóricas:</b> <span id="nTeoV">' + nTeoria + '</span></label><input id="nTeo" type="range" min="10" max="20" value="' + nTeoria + '" style="width:100%;margin:10px 0 4px">' +
+        '<p class="muted peq">Parte práctica (10 ejercicios): escenario de concurrencia · grafo de precedencia · recuperabilidad · marcas de tiempo · cadena de respaldos · recuperación con el log · árbol de consulta · reescritura SQL optimizada · 2 ejercicios de MongoDB.</p>' +
+        '<p class="muted peq">Las respuestas no se revelan hasta entregar. La teoría vale 1 punto por pregunta y cada ejercicio práctico entre 2 y 5 puntos según sus partes.</p>' +
+        '<button class="btn primario" id="iniciarSim">' + ICON('play') + 'Comenzar simulacro</button></div>' +
+        (hist.length ? '<div class="tarjeta"><h2>Simulacros anteriores</h2>' + hist.map(function (h) { return '<div class="prog-fila"><span>' + new Date(h.fecha).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' }) + ' · teoría ' + h.teo + ' · práctica ' + h.prac + '</span>' + barra(h.nota) + '<span class="num">' + h.nota + '</span></div>'; }).join('') + '</div>' : '') + '</div>';
+    }
+    var E = EXAMEN, n = 0;
+    var teo = E.teoria.map(function (q, i) {
+      n++;
+      var cuerpo = q.t === 'mc' ? '<div class="opciones">' + q.ops.map(function (o, j) { return '<label class="opcion"><input type="radio" name="sq' + i + '" value="' + j + '"><span class="letra">' + 'ABCD'[j] + '</span><span>' + esc(o) + '</span></label>'; }).join('') + '</div>'
+        : '<div class="opciones vf"><label class="opcion"><input type="radio" name="sq' + i + '" value="1"><span class="letra">V</span><span>Verdadero</span></label><label class="opcion"><input type="radio" name="sq' + i + '" value="0"><span class="letra">F</span><span>Falso</span></label></div>';
+      return '<div class="tarjeta preg sim-item" data-k="t' + i + '"><div class="preg-cab"><span class="preg-n">' + n + '.</span><span class="chip">' + TIPO_Q[q.t] + '</span></div><div class="preg-q">' + esc(q.q) + '</div>' + cuerpo + '<div class="sim-corr"></div></div>';
+    }).join('');
+    var pra = E.practica.map(function (it, i) {
+      n++;
+      var t = temaPorId[it.tipo === 'codigo' ? it.e.tema : it.tema];
+      var cab = '<div class="preg-cab"><span class="preg-n">' + n + '.</span><span class="chip suave" style="--uc:' + color(t.u) + '">' + esc(it.tipo === 'codigo' ? (it.lab === 'sql' ? 'Optimización SQL' : 'MongoDB') : it.titulo) + '</span><span class="chip">' + (it.max) + ' pts</span></div>';
+      if (it.tipo === 'gen') return '<div class="tarjeta sim-item practico" data-k="p' + i + '">' + cab + it.html + '<div class="sim-corr"></div></div>';
+      var ex = it.e;
+      return '<div class="tarjeta sim-item" data-k="p' + i + '">' + cab + '<p class="enunciado">' + ex.enunciado + '</p>' + (it.lab === 'sql' ? esquemaSQL(ex.db) : esquemaMongo(ex.datos)) +
+        '<div class="editor-caja"><div class="editor-cab"><span>' + (it.lab === 'sql' ? 'SQL Server (T-SQL)' : 'MongoDB Shell (MQL)') + '</span></div><textarea class="editor" spellcheck="false" autocapitalize="off" data-cod="' + i + '" aria-label="Respuesta del ejercicio ' + n + '"></textarea></div><div class="sim-corr"></div></div>';
+    }).join('');
+    return '<div class="contenedor estrecho"><div class="barra-examen tarjeta"><div><b>Simulacro</b> · <span id="simReloj">00:00</span> · <span id="simResp"></span></div><button class="btn primario" id="entregar"' + (E.entregado ? ' hidden' : '') + '>' + ICON('check') + 'Entregar</button><button class="btn" id="nuevoSim"' + (E.entregado ? '' : ' hidden') + '>' + ICON('refresh') + 'Nuevo simulacro</button></div>' +
+      '<div id="simResumen"></div><h2 class="sim-sec">Parte teórica · ' + E.teoria.length + ' preguntas</h2>' + teo + '<h2 class="sim-sec">Parte práctica · ' + E.practica.length + ' ejercicios</h2>' + pra +
+      '<div class="tarjeta" style="margin-top:16px;text-align:center"><button class="btn primario" id="entregar2">' + ICON('check') + 'Entregar simulacro</button></div></div>';
+  }
+  function enlazarSimulacro(raiz) {
+    var rango = raiz.querySelector('#nTeo');
+    if (rango) {
+      rango.addEventListener('input', function () { nTeoria = +rango.value; raiz.querySelector('#nTeoV').textContent = nTeoria; });
+      raiz.querySelector('#iniciarSim').addEventListener('click', function () { EXAMEN = crearExamen(nTeoria); render(); window.scrollTo(0, 0); });
+      return;
+    }
+    var E = EXAMEN;
+    function contar() {
+      var r = 0; E.teoria.forEach(function (q, i) { if (raiz.querySelector('input[name="sq' + i + '"]:checked')) r++; });
+      var el = raiz.querySelector('#simResp'); if (el) el.textContent = r + '/' + E.teoria.length + ' teóricas respondidas';
+    }
+    raiz.addEventListener('change', contar); contar();
+    clearInterval(reloj);
+    reloj = setInterval(function () { var el = document.getElementById('simReloj'); if (!el) { clearInterval(reloj); return; } var s = Math.floor(((E.fin || Date.now()) - E.inicio) / 1000); el.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }, 1000);
+    function entregar() {
+      if (E.entregado) return;
+      E.entregado = true; E.fin = Date.now();
+      var pt = 0, pp = 0, mp = 0, porCat = {};
+      E.teoria.forEach(function (q, i) {
+        var card = raiz.querySelector('[data-k="t' + i + '"]'), m = card.querySelector('input:checked'), ok;
+        var correctaIdx = q.t === 'mc' ? q.correcta : (q.a ? 0 : 1);
+        var marcada = m ? (q.t === 'mc' ? +m.value : (m.value === '1' ? 0 : 1)) : -1;
+        ok = marcada === correctaIdx; if (ok) pt++;
+        var labels = card.querySelectorAll('.opcion'); labels[correctaIdx].classList.add('correcta'); if (marcada >= 0 && !ok) labels[marcada].classList.add('incorrecta');
+        card.querySelectorAll('input').forEach(function (x) { x.disabled = true; });
+        card.querySelector('.sim-corr').innerHTML = retro(ok, ok ? 'Correcta' : marcada < 0 ? 'Sin responder' : 'Incorrecta', '<p>' + esc(q.e) + '</p>', q);
+        registrar(q, ok);
+      });
+      var pendientes = E.practica.map(function (it, i) {
+        var card = raiz.querySelector('[data-k="p' + i + '"]'), cat = it.tipo === 'gen' ? it.titulo : (it.lab === 'sql' ? 'Optimización SQL' : 'MongoDB');
+        function anotar(p, max, html, clase) { pp += p; mp += max; porCat[cat] = porCat[cat] || [0, 0]; porCat[cat][0] += p; porCat[cat][1] += max; card.querySelector('.sim-corr').innerHTML = '<div class="retro ' + clase + '"><div class="retro-tit">' + ICON(clase === 'ok' ? 'ok' : clase === 'bad' ? 'bad' : 'alert') + p + ' de ' + max + ' puntos</div>' + html + '</div>'; }
+        card.querySelectorAll('input,select,textarea').forEach(function (x) { x.disabled = true; });
+        if (it.tipo === 'gen') { var r = it.corregir(card); anotar(r.puntos, r.max, r.html, r.puntos === r.max ? 'ok' : r.puntos ? 'aviso' : 'bad'); return Promise.resolve(); }
+        var cod = card.querySelector('textarea').value;
+        var pr = it.lab === 'sql' ? MOTOR_SQL.calificar(it.e, cod) : Promise.resolve(MOTOR_MONGO.calificar(it.e, cod));
+        return pr.then(function (r) {
+          var p = r.estado === 'ok' ? 2 : 0;
+          var html = '<p><b>' + esc(r.titulo) + '.</b> ' + esc(r.texto || '') + '</p>' + (r.lista ? '<ul>' + r.lista.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + (r.estado === 'aviso' ? '<p class="peq">No se pudo evaluar automáticamente: compare con la solución.</p>' : '') +
+            '<p><b>Solución sugerida:</b></p>' + codigo(it.e.solucion, it.lab === 'sql' ? 'sql' : 'mongo') + '<p>' + it.e.explicacion + '</p>';
+          anotar(p, 2, html, p ? 'ok' : r.estado === 'aviso' ? 'aviso' : 'bad');
+          if (p) { P[it.lab][it.e.id] = P[it.lab][it.e.id] || { ok: false, n: 0 }; P[it.lab][it.e.id].ok = true; }
+        }).catch(function () { anotar(0, 2, '<p>No se pudo evaluar. Compare con la solución:</p>' + codigo(it.e.solucion, it.lab === 'sql' ? 'sql' : 'mongo'), 'aviso'); });
+      });
+      Promise.all(pendientes).then(function () {
+        var total = E.teoria.length + mp, nota = Math.round((pt + pp) * 100 / total);
+        P.simulacros = (P.simulacros || []).concat([{ fecha: Date.now(), nota: nota, teo: pt + '/' + E.teoria.length, prac: pp + '/' + mp }]).slice(-20); guardar();
+        raiz.querySelector('#simResumen').innerHTML = '<div class="tarjeta"><div class="resumen-quiz"><div><h2 style="margin:0">Resultado: ' + nota + ' / 100</h2><p class="muted" style="margin:6px 0 0">Teoría: <b>' + pt + '/' + E.teoria.length + '</b> · Práctica: <b>' + pp + '/' + mp + '</b> puntos</p></div><div class="anillo" style="--p:' + nota + '"><span>' + nota + '</span></div></div>' +
+          '<div style="margin-top:12px">' + Object.keys(porCat).map(function (k) { var v = porCat[k]; return '<div class="prog-fila"><span>' + esc(k) + '</span>' + barra(pct(v[0], v[1])) + '<span class="num">' + v[0] + '/' + v[1] + '</span></div>'; }).join('') + '</div>' +
+          '<p class="peq muted" style="margin-top:10px">Debajo de cada pregunta está la corrección y el tema que conviene repasar.</p></div>';
+        raiz.querySelector('#entregar').hidden = true; raiz.querySelector('#nuevoSim').hidden = false; raiz.querySelector('#entregar2').parentNode.hidden = true;
+        decorarCodigo(raiz); window.scrollTo(0, 0);
+      });
+    }
+    raiz.querySelector('#entregar').addEventListener('click', entregar);
+    raiz.querySelector('#entregar2').addEventListener('click', entregar);
+    raiz.querySelector('#nuevoSim').addEventListener('click', function () { EXAMEN = null; render(); window.scrollTo(0, 0); });
+    raiz.querySelectorAll('textarea.editor').forEach(function (ed) { ed.addEventListener('keydown', function (ev) { if (ev.key === 'Tab' && !ev.shiftKey) { ev.preventDefault(); ed.setRangeText('  ', ed.selectionStart, ed.selectionEnd, 'end'); } }); });
+    if (E.practica.some(function (it) { return it.lab === 'sql'; })) MOTOR_SQL.cargar().catch(function () {});
+  }
+
   /* ------------------------- tema claro / oscuro ------------------------- */
   var $tb = document.getElementById('temaBtn');
   function pintarTema() {
@@ -523,19 +657,23 @@
       case 'practicar': html = arg ? vQuiz(arg) : vPracticar(); break;
       case 'sql': case 'mongo': html = vLab(r, arg); break;
       case 'progreso': html = vProgreso(); break;
+      case 'practico': html = vPractico(arg); sec = 'practicar'; break;
+      case 'simulacro': html = vSimulacro(); break;
       case 'cobertura': html = vCobertura(); break;
       default: html = vNoEncontrado();
     }
     $main.innerHTML = html;
     pintarIconos($main); decorarCodigo($main);
     document.querySelectorAll('.nav a[data-r]').forEach(function (a) { a.classList.toggle('activo', a.dataset.r === sec); if (a.dataset.r === sec) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-    var titulos = { inicio: 'Inicio', estudiar: 'Estudiar', tema: arg && temaPorId[arg] ? temaPorId[arg].titulo : 'Tema', practicar: 'Practicar', sql: 'Laboratorio SQL', mongo: 'Laboratorio MongoDB', progreso: 'Mi progreso', cobertura: 'Cobertura del temario' };
+    var titulos = { inicio: 'Inicio', estudiar: 'Estudiar', tema: arg && temaPorId[arg] ? temaPorId[arg].titulo : 'Tema', practicar: 'Practicar', sql: 'Laboratorio SQL', mongo: 'Laboratorio MongoDB', progreso: 'Mi progreso', practico: 'Ejercicio práctico', simulacro: 'Simulacro de examen', cobertura: 'Cobertura del temario' };
     document.title = (titulos[r] || 'Centro de Estudio') + ' · Centro de Estudio BD II';
     if (r === 'estudiar') $main.querySelectorAll('[data-f]').forEach(function (b) { b.addEventListener('click', function () { filtroUnidad = b.dataset.f; render(); }); });
     if (r === 'tema') { var mb = document.getElementById('marcarLeido'); if (mb) mb.addEventListener('click', function () { if (P.leidos[arg]) delete P.leidos[arg]; else P.leidos[arg] = Date.now(); guardar(); toast(P.leidos[arg] ? 'Tema marcado como estudiado' : 'Marca quitada'); render(); }); }
     if (r === 'practicar' && arg) enlazarQuiz($main);
+    if (r === 'practico') enlazarPractico($main, arg);
+    if (r === 'simulacro') enlazarSimulacro($main);
     if (r === 'sql' || r === 'mongo') enlazarLab($main, r, arg || (($main.querySelector('.ej-item.activo') || { getAttribute: function () { return ''; } }).getAttribute('href') || '').split('/')[2]);
-    if (r === 'progreso') { var bb = document.getElementById('borrar'); bb.addEventListener('click', function () { if (!confirmarBorrado) { confirmarBorrado = true; render(); return; } confirmarBorrado = false; P = { leidos: {}, preg: {}, sql: {}, mongo: {}, borr: {}, ultimo: null }; guardar(); toast('Progreso borrado'); render(); }); }
+    if (r === 'progreso') { var bb = document.getElementById('borrar'); bb.addEventListener('click', function () { if (!confirmarBorrado) { confirmarBorrado = true; render(); return; } confirmarBorrado = false; P = { leidos: {}, preg: {}, sql: {}, mongo: {}, borr: {}, ultimo: null, simulacros: [] }; guardar(); toast('Progreso borrado'); render(); }); }
     else confirmarBorrado = false;
     menu(false);
   }
