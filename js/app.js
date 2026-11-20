@@ -49,6 +49,45 @@
   });
   var TODAS_PREG = [].concat.apply([], TEMAS.map(function (t) { return PREG[t.id]; }));
 
+  /* Variedad en Practicar y Simulacro: cada intento elige otras preguntas
+     (primero las nunca vistas, luego las falladas), agrega preguntas
+     generadas con valores al azar y baraja las opciones. */
+  var ACTUALES = {};
+  function clonar(lista) { return lista.map(function (q) { return Object.assign({}, q); }); }
+  function prepararOpciones(lista, seed) {
+    var k = 0;
+    lista.forEach(function (q) {
+      if (q.t !== 'mc') return;
+      var perm = barajar([0, 1, 2, 3], (seed + Math.floor(k / 4) * 7919) >>> 0);
+      var pos = perm[k % 4] % q.o.length, d = barajar(q.o.slice(1), (seed ^ hash(q.id)) >>> 0);
+      d.splice(pos, 0, q.o[0]); q.ops = d; q.correcta = pos; k++;
+    });
+    ACTUALES = {}; P.vistas = P.vistas || {};
+    lista.forEach(function (q) { ACTUALES[q.id] = q; if (!q.gen) P.vistas[q.id] = (P.vistas[q.id] || 0) + 1; });
+    guardar();
+    return lista;
+  }
+  // Menos mostrada primero; a igualdad, nunca respondida → fallada → acertada
+  function prioridad(q, vistos) {
+    if (vistos) return vistos[q.id] || 0;
+    var r = P.preg[q.id], v = (P.vistas || {})[q.id] || 0;
+    return v * 10 + (!r ? 0 : (!r.ok ? 1 : 2));
+  }
+  function seleccionar(pool, n, seed, vistos) {
+    var r = barajar(pool, seed >>> 0).map(function (q, i) { return { q: q, i: i, p: prioridad(q, vistos) }; });
+    r.sort(function (a, b) { return a.p - b.p || a.i - b.i; });
+    return r.slice(0, n).map(function (x) { return x.q; });
+  }
+  function generadas(temas, n, seed, dif) {
+    var lista = temas.filter(function (t) { return TEORIA_GEN.temas.indexOf(t) >= 0; }), out = [], i = 0;
+    if (!lista.length) return out;
+    while (out.length < n && i < n * 8) {
+      var q = TEORIA_GEN.generar(lista[(seed + i) % lista.length], (seed + i * 104729) >>> 0); i++;
+      if (q && q.o.length >= 3 && (!dif || q.d === dif)) out.push(q);
+    }
+    return out;
+  }
+
   // Ejercicios de laboratorio por tema
   var LAB_POR_TEMA = {};
   LAB_SQL.EJERCICIOS.forEach(function (e) { (LAB_POR_TEMA[e.tema] = LAB_POR_TEMA[e.tema] || []).push({ tipo: 'sql', e: e }); });
@@ -194,11 +233,16 @@
     if (mixta) {
       var base = Object.keys(P.leidos).filter(function (k) { return temaPorId[k] && EXAMEN3[k]; });
       var pool = [].concat.apply([], (base.length ? base : Object.keys(EXAMEN3)).map(function (k) { return PREG[k]; }));
-      lista = barajar(pool, semillaMixta).slice(0, 12);
+      var sm = (semillaMixta = Date.now()) >>> 0;
+      lista = barajar(seleccionar(pool, 9, sm).concat(generadas(base.length ? base : Object.keys(EXAMEN3), 3, sm)), sm + 3);
+      prepararOpciones(lista = clonar(lista), sm);
     } else {
       if (!t) return vNoEncontrado();
       if (!EXAMEN3[id]) return '<div class="contenedor estrecho"><div class="tarjeta"><h1>Este tema no entra en el Examen 3</h1><p>La práctica incluye solo las Guías #8 a #13. Puede seguir leyendo <a href="#/tema/' + id + '">' + esc(t.titulo) + '</a> en Estudiar.</p><a class="btn primario" href="#/practicar">Ir a Practicar</a></div></div>';
-      lista = PREG[id].filter(function (q) { return !filtroDif || q.d === filtroDif; });
+      var sq = Date.now() >>> 0, banco = PREG[id].filter(function (q) { return !filtroDif || q.d === filtroDif; });
+      lista = barajar(seleccionar(banco, 10, sq).concat(generadas([id], 3, sq, filtroDif)), sq + 3);
+      prepararOpciones(lista = clonar(lista), sq);
+      vQuiz.nota = '<p class="muted peq">Cada intento muestra otra selección de las ' + banco.length + ' preguntas del tema (primero las que no ha visto o falló)' + (TEORIA_GEN.temas.indexOf(id) >= 0 ? ', más preguntas generadas con valores nuevos' : '') + '. Las opciones también cambian de orden.</p>';
     }
     var u = t ? uniPorId[t.u] : null;
     var cab = mixta ? '<nav class="miga"><a href="#/practicar">Practicar</a><span>/</span><span>Repaso mixto</span></nav><header class="encabezado"><h1>Repaso mixto</h1><p>Preguntas de distintos temas. Cada explicación indica qué tema repasar.</p></header>'
@@ -206,7 +250,7 @@
     var filtros = mixta ? '' : '<div class="filtros" role="group" aria-label="Dificultad">' + [0, 1, 2, 3].map(function (d) { return '<button class="filtro" data-dif="' + d + '" aria-pressed="' + (filtroDif === d) + '">' + (d ? DIF[d] : 'Todas') + '</button>'; }).join('') + '</div>';
     var items = lista.map(function (q, i) { return tarjetaPregunta(q, i + 1, mixta); }).join('') || '<div class="tarjeta"><p class="muted" style="margin:0">No hay preguntas de esta dificultad en el tema.</p></div>';
     var labs = t ? (LAB_POR_TEMA[id] || []) : [];
-    return '<div class="contenedor estrecho" style="--uc:' + (t ? color(t.u) : 'var(--primary)') + '">' + cab + filtros +
+    return '<div class="contenedor estrecho" style="--uc:' + (t ? color(t.u) : 'var(--primary)') + '">' + cab + filtros + (mixta ? '' : (vQuiz.nota || '')) +
       '<div id="quiz">' + items + '</div>' +
       '<div class="tarjeta" style="margin-top:16px"><div class="resumen-quiz"><div id="marcador" aria-live="polite"></div><div class="acciones"><button class="btn" id="reintentar">' + ICON('refresh') + (mixta ? 'Otras preguntas' : 'Volver a intentar') + '</button>' + (t ? '<a class="btn" href="#/tema/' + id + '">' + ICON('book') + 'Repasar el tema</a>' : '') + '</div></div>' +
       (labs.length ? '<p class="peq" style="margin:12px 0 0">Ejercicios de código de este tema: ' + labs.map(function (l) { return '<a href="#/' + l.tipo + '/' + l.e.id + '">' + esc(l.e.titulo) + '</a>'; }).join(' · ') + '</p>' : '') + '</div></div>';
@@ -221,7 +265,6 @@
     var cuerpo = '';
     if (q.t === 'mc') {
       var ops = q.ops, corr = q.correcta;
-      if (mixta) { opcionesMixtas(q); ops = q.opsMix; corr = q.corrMix; }
       cuerpo = '<div class="opciones" role="group" aria-label="Opciones">' + ops.map(function (o, i) { return '<button class="opcion" type="button" data-i="' + i + '" data-c="' + corr + '"><span class="letra">' + 'ABCD'[i] + '</span><span>' + esc(o) + '</span></button>'; }).join('') + '</div>';
     } else if (q.t === 'vf') {
       cuerpo = '<div class="opciones vf" role="group" aria-label="Verdadero o falso"><button class="opcion" type="button" data-vf="1"><span class="letra">V</span><span>Verdadero</span></button><button class="opcion" type="button" data-vf="0"><span class="letra">F</span><span>Falso</span></button></div>';
@@ -237,6 +280,7 @@
     return '<div class="retro ' + (ok === true ? 'ok' : ok === false ? 'bad' : 'neutro') + '"><div class="retro-tit">' + ICON(ok === true ? 'ok' : ok === false ? 'bad' : 'info') + titulo + '</div>' + cuerpo + '<p class="peq" style="margin-top:6px">Tema: <a href="#/tema/' + t.id + '">' + esc(t.titulo) + '</a></p></div>';
   }
   function registrar(q, ok) {
+    if (q.gen) { marcador(); return; }
     var r = P.preg[q.id] || { ok: false, n: 0 };
     r.n++; r.ok = r.ok || ok; r.ult = ok; P.preg[q.id] = r; guardar(); marcador();
   }
@@ -259,7 +303,7 @@
       if (b.id === 'reintentar') { if (location.hash.indexOf('mixta') >= 0) semillaMixta = Date.now(); render(); window.scrollTo(0, 0); return; }
       if (b.dataset.dif !== undefined) { filtroDif = +b.dataset.dif; render(); return; }
       var card = b.closest('.preg'); if (!card) return;
-      var q = TODAS_PREG.find(function (x) { return x.id === card.dataset.q; }), wrap = card.querySelector('.retro-wrap');
+      var q = ACTUALES[card.dataset.q], wrap = card.querySelector('.retro-wrap');
       if (b.classList.contains('opcion')) {
         var botones = card.querySelectorAll('.opcion'); if (botones[0].disabled) return;
         var ok, correctoTxt;
@@ -289,7 +333,7 @@
     });
     raiz.addEventListener('submit', function (ev) {
       var f = ev.target; if (!f.hasAttribute('data-num')) return; ev.preventDefault();
-      var card = f.closest('.preg'), q = TODAS_PREG.find(function (x) { return x.id === card.dataset.q; }), wrap = card.querySelector('.retro-wrap');
+      var card = f.closest('.preg'), q = ACTUALES[card.dataset.q], wrap = card.querySelector('.retro-wrap');
       var inp = f.querySelector('input'), v = parseNum(inp.value);
       if (isNaN(v)) { wrap.innerHTML = '<div class="retro aviso"><div class="retro-tit">' + ICON('alert') + 'Escriba un número</div></div>'; inp.focus(); return; }
       var ok = Math.abs(v - q.a) <= (q.tol || 0) + 1e-9;
@@ -533,7 +577,9 @@
   function crearExamen(n) {
     var seed = Date.now() >>> 0;
     var pool = [].concat.apply([], TEMAS_EXAMEN.map(function (k) { return PREG[k].filter(function (q) { return q.t === 'mc' || q.t === 'vf'; }); }));
-    var teoria = barajar(pool, seed).slice(0, n);
+    var nGen = Math.round(n * 0.35);
+    var teoria = barajar(seleccionar(pool, n - nGen, seed, P.vistosSim || {}).concat(generadas(TEMAS_EXAMEN, nGen, seed + 11)), seed + 5);
+    prepararOpciones(teoria = clonar(teoria), seed);
     var practica = ['concurrencia', 'conflictos', 'recuperabilidad', 'marcas', 'respaldo', 'log', 'arbol'].map(function (cat, i) { var it = PRACTICO.generar(cat, seed + i * 977); it.tipo = 'gen'; return it; });
     var sqlOpt = LAB_SQL.EJERCICIOS.filter(function (e) { return e.g === 'I' && e.tipo === 'consulta'; });
     practica.push({ tipo: 'codigo', lab: 'sql', e: barajar(sqlOpt, seed)[0], max: 2, cat: 'optimizacion' });
@@ -599,7 +645,7 @@
         var labels = card.querySelectorAll('.opcion'); labels[correctaIdx].classList.add('correcta'); if (marcada >= 0 && !ok) labels[marcada].classList.add('incorrecta');
         card.querySelectorAll('input').forEach(function (x) { x.disabled = true; });
         card.querySelector('.sim-corr').innerHTML = retro(ok, ok ? 'Correcta' : marcada < 0 ? 'Sin responder' : 'Incorrecta', '<p>' + esc(q.e) + '</p>', q);
-        registrar(q, ok);
+        registrar(q, ok); if (!q.gen) { P.vistosSim = P.vistosSim || {}; P.vistosSim[q.id] = (P.vistosSim[q.id] || 0) + 1; }
       });
       var pendientes = E.practica.map(function (it, i) {
         var card = raiz.querySelector('[data-k="p' + i + '"]'), cat = it.tipo === 'gen' ? it.titulo : (it.lab === 'sql' ? 'Optimización SQL' : 'MongoDB');

@@ -6,6 +6,7 @@ Plataforma web de estudio que complementa al videojuego **Servidor Nocturno**. E
 - **Estudiar:** 14 temas en 5 unidades: transacciones y concurrencia, planificación, respaldo y recuperación, optimización, BD distribuidas y MongoDB.
 - **Practicar:** solo temas del Examen 3 (Guías #8 a #13): 95 preguntas de selección única, verdadero o falso, aplicación y comprensión, más los ejercicios prácticos generados. Cada una tiene dificultad y explicación.
 - **Ejercicios prácticos generados:** concurrencia, grafo de precedencia, recuperabilidad, marcas de tiempo, cadena de respaldos, recuperación con el log y árboles de consulta. Se crean nuevos cada vez y se corrigen solos.
+- **Variedad en Practicar y Simulacro:** banco ampliado (263 preguntas del Examen 3, `js/preguntas-extra.js`) y preguntas generadas con valores al azar (`js/teoria-gen.js`). Cada intento muestra primero las preguntas menos vistas y baraja las opciones.
 - **Simulacro de examen:** de 10 a 20 preguntas teóricas más 10 ejercicios prácticos (concurrencia, planificación, respaldo, recuperación, optimización de consultas y MongoDB), con nota al entregar.
 - **Laboratorio SQL:** 25 ejercicios, solo de los temas prácticos del examen: concurrencia y transacciones, respaldo y recuperación, y optimización de consultas. Las consultas se ejecutan en SQLite (sql.js) adaptando la sintaxis de SQL Server; las instrucciones de administración se revisan por su estructura.
 - **Laboratorio MongoDB:** 27 ejercicios con un intérprete MQL propio. Se compara el resultado o la colección final.
@@ -27,6 +28,8 @@ js/datos-mongo.js     colecciones y ejercicios MongoDB
 js/motor-sql.js       traducción T-SQL, ejecución y calificación
 js/motor-mongo.js     intérprete MQL y calificación
 js/practico.js        generadores de ejercicios prácticos
+js/preguntas-extra.js banco adicional de preguntas (Practicar y Simulacro)
+js/teoria-gen.js      preguntas teóricas generadas al azar
 js/app.js             rutas, vistas, buscador y progreso
 vendor/               sql.js 1.10.3 (SQLite en WebAssembly)
 ```
