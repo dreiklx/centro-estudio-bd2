@@ -495,6 +495,23 @@
   $velo.addEventListener('click', function () { menu(false); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && $nav.classList.contains('abierto')) menu(false); });
 
+  /* ------------------------- tema claro / oscuro ------------------------- */
+  var $tb = document.getElementById('temaBtn');
+  function pintarTema() {
+    var oscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+    $tb.innerHTML = ICON(oscuro ? 'sun' : 'moon');
+    $tb.setAttribute('aria-label', oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+    $tb.title = oscuro ? 'Tema claro' : 'Tema oscuro';
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', oscuro ? '#0e1320' : '#4338ca');
+  }
+  $tb.addEventListener('click', function () {
+    var nuevo = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nuevo);
+    try { localStorage.setItem('ceBD.tema', nuevo); } catch (e) { /* sin almacenamiento */ }
+    pintarTema();
+  });
+  pintarTema();
+
   /* ------------------------- router ------------------------- */
   function render() {
     var partes = (location.hash || '#/inicio').replace(/^#\/?/, '').split('/');
