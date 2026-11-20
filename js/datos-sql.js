@@ -1,7 +1,8 @@
 /* =====================================================================
    LABORATORIO SQL · bases de práctica y ejercicios
-   Bases: 'super' (modelo Supermercado de la Guía #1), 'taller'
-   (BD_TallerOptimizacion de la Guía #11) y 'libro' (Guía #9).
+   Solo temas prácticos del examen: concurrencia, respaldo,
+   recuperación y optimización de consultas.
+   Bases: 'taller' (BD_TallerOptimizacion, Guía #11) y 'libro' (Guía #9).
    Tipos de ejercicio:
      consulta   → se ejecuta y se compara el resultado con la solución
      modifica   → se ejecuta y se compara el estado de las tablas
@@ -15,34 +16,6 @@
   }
 
   var BASES = {
-    super: {
-      nombre: 'SUPERMERCADO',
-      esquema: [
-        ['CATEGORIAS', ['ID_CATEGORIA*', 'DESCRIPCION']],
-        ['PROVEEDORES', ['ID_PROVEEDOR*', 'NOMBRE', 'DIRECCION', 'TELEFONO']],
-        ['PRODUCTOS', ['ID_PRODUCTO*', 'DESCRIPCION', 'PRECIO', 'ID_CATEGORIA', 'ID_PROVEEDOR']],
-        ['CLIENTES', ['ID_CLIENTE*', 'NOMBRE', 'DIRECCION', 'TELEFONO']],
-        ['FACTURAS', ['ID_FACTURA*', 'FECHA', 'ID_CLIENTE']],
-        ['VENTAS', ['ID_VENTA*', 'ID_FACTURA', 'ID_PRODUCTO', 'CANTIDAD']]
-      ],
-      sql: function () {
-        var h = hoy();
-        return [
-          'CREATE TABLE CATEGORIAS (ID_CATEGORIA INTEGER PRIMARY KEY, DESCRIPCION TEXT COLLATE NOCASE);',
-          'CREATE TABLE PROVEEDORES (ID_PROVEEDOR INTEGER PRIMARY KEY, NOMBRE TEXT COLLATE NOCASE, DIRECCION TEXT COLLATE NOCASE, TELEFONO TEXT);',
-          'CREATE TABLE PRODUCTOS (ID_PRODUCTO INTEGER PRIMARY KEY, DESCRIPCION TEXT COLLATE NOCASE, PRECIO DECIMAL(10,2), ID_CATEGORIA INT REFERENCES CATEGORIAS(ID_CATEGORIA), ID_PROVEEDOR INT REFERENCES PROVEEDORES(ID_PROVEEDOR));',
-          'CREATE TABLE CLIENTES (ID_CLIENTE INTEGER PRIMARY KEY, NOMBRE TEXT COLLATE NOCASE, DIRECCION TEXT COLLATE NOCASE, TELEFONO TEXT);',
-          'CREATE TABLE FACTURAS (ID_FACTURA INTEGER PRIMARY KEY, FECHA DATE, ID_CLIENTE INT REFERENCES CLIENTES(ID_CLIENTE));',
-          'CREATE TABLE VENTAS (ID_VENTA INTEGER PRIMARY KEY, ID_FACTURA INT REFERENCES FACTURAS(ID_FACTURA), ID_PRODUCTO INT REFERENCES PRODUCTOS(ID_PRODUCTO), CANTIDAD INT);',
-          "INSERT INTO CATEGORIAS VALUES (1,'Lácteos'),(2,'Bebidas'),(3,'Limpieza'),(4,'Abarrotes');",
-          "INSERT INTO PROVEEDORES VALUES (1,'Distribuidora Central','Guápiles','2710-1000'),(2,'Lácteos del Valle','Turrialba','2556-2000'),(3,'Bebidas del Caribe','Limón','2758-3000');",
-          "INSERT INTO PRODUCTOS VALUES (1,'Leche entera 1L',950,1,2),(2,'Queso turrialba 500g',3200,1,2),(3,'Yogurt natural',750,1,2),(4,'Refresco cola 2L',1450,2,3),(5,'Agua 600ml',600,2,3),(6,'Jugo de naranja 1L',1200,2,3),(7,'Detergente 1kg',2800,3,1),(8,'Jabón de baño',450,3,1),(9,'Arroz 2kg',2100,4,1),(10,'Frijoles 900g',1350,4,1),(11,'Café 500g',3900,4,1),(12,'Cloro 1L',980,3,1);",
-          "INSERT INTO CLIENTES VALUES (1,'Ana Mora','Guápiles','8888-1111'),(2,'Carlos Rojas','Limón','8888-2222'),(3,'María Vargas','Siquirres','8888-3333'),(4,'Pedro Solís','Turrialba','8888-4444'),(5,'Laura Jiménez','Guápiles','8888-5555');",
-          "INSERT INTO FACTURAS VALUES (1,'2026-09-10',1),(2,'2026-09-15',2),(3,'2026-10-01',1),(4,'2026-10-20',3),(5,'" + h + "',4),(6,'" + h + "',2),(7,'2024-06-15',3);",
-          'INSERT INTO VENTAS VALUES (1,1,1,2),(2,1,9,1),(3,1,4,3),(4,2,5,6),(5,2,11,1),(6,3,1,4),(7,3,2,1),(8,4,7,1),(9,4,1,1),(10,5,6,2),(11,5,4,1),(12,6,3,5),(13,7,10,2),(14,7,1,3);'
-        ].join('\n');
-      }
-    },
     taller: {
       nombre: 'BD_TallerOptimizacion',
       esquema: [
@@ -74,302 +47,13 @@
   };
 
   var GRUPOS = [
-    { id: 'A', titulo: 'Consultas básicas', tema: 'sql-consultas' },
-    { id: 'B', titulo: 'JOIN, agregados y subconsultas', tema: 'sql-join' },
-    { id: 'C', titulo: 'Modificar datos y tablas', tema: 'sql-dml' },
-    { id: 'D', titulo: 'Índices', tema: 'indices-tipos' },
-    { id: 'E', titulo: 'Seguridad y vistas', tema: 'permisos-sql' },
-    { id: 'F', titulo: 'Programación T-SQL', tema: 'variables-control' },
-    { id: 'G', titulo: 'Transacciones y concurrencia', tema: 'transacciones' },
+    { id: 'G', titulo: 'Concurrencia y transacciones', tema: 'transacciones' },
     { id: 'H', titulo: 'Respaldo y recuperación', tema: 'backup-restore' },
-    { id: 'I', titulo: 'Optimización', tema: 'optimizacion-practica' },
-    { id: 'J', titulo: 'BD distribuidas', tema: 'servidores-vinculados' }
+    { id: 'I', titulo: 'Optimización de consultas', tema: 'optimizacion-practica' }
   ];
 
   var E = [];
   function ej(o) { E.push(o); }
-
-  /* ---------------- A · Consultas básicas ---------------- */
-  ej({ g: 'A', n: 1, tema: 'sql-consultas', titulo: 'Todos los productos', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre <b>todos</b> los productos registrados (todas las columnas).',
-    pista: 'Use el asterisco para indicar todas las columnas.',
-    solucion: 'SELECT * FROM PRODUCTOS;',
-    explicacion: '<code>SELECT *</code> devuelve todas las columnas; sin WHERE se obtienen las 12 filas.' });
-  ej({ g: 'A', n: 2, tema: 'sql-consultas', titulo: 'Productos de la categoría 1', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre todos los productos que pertenecen a la <b>categoría 1</b> (Guía #1, punto 4).',
-    pista: 'Filtre con WHERE sobre la columna ID_CATEGORIA.',
-    solucion: 'SELECT * FROM PRODUCTOS WHERE ID_CATEGORIA = 1;',
-    explicacion: 'La condición <code>ID_CATEGORIA = 1</code> deja los 3 productos lácteos.' });
-  ej({ g: 'A', n: 3, tema: 'sql-consultas', titulo: 'Productos de menos de 1000', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre todos los productos que valen <b>menos de 1000</b> (Guía #1, punto 5).',
-    pista: 'Operador de comparación sobre PRECIO.',
-    solucion: 'SELECT * FROM PRODUCTOS WHERE PRECIO < 1000;',
-    explicacion: '<code>&lt;</code> es estricto: un producto de exactamente 1000 no aparecería.' });
-  ej({ g: 'A', n: 4, tema: 'sql-consultas', titulo: 'Precios de mayor a menor', tipo: 'consulta', db: 'super', ordenado: true,
-    enunciado: 'Muestre la <b>DESCRIPCION</b> y el <b>PRECIO</b> de todos los productos, ordenados del precio <b>mayor al menor</b>.',
-    pista: 'ORDER BY con la palabra que indica orden descendente.',
-    solucion: 'SELECT DESCRIPCION, PRECIO FROM PRODUCTOS ORDER BY PRECIO DESC;',
-    explicacion: 'Aquí el orden importa: se compara también la secuencia de filas. <code>DESC</code> = descendente.' });
-  ej({ g: 'A', n: 5, tema: 'sql-consultas', titulo: 'Clientes de Guápiles', tipo: 'consulta', db: 'super',
-    enunciado: "Muestre el <b>NOMBRE</b> y el <b>TELEFONO</b> de los clientes cuya DIRECCION es <b>'Guápiles'</b>.",
-    pista: 'Los textos van entre comillas simples.',
-    solucion: "SELECT NOMBRE, TELEFONO FROM CLIENTES WHERE DIRECCION = 'Guápiles';",
-    explicacion: 'Ana Mora y Laura Jiménez viven en Guápiles.' });
-  ej({ g: 'A', n: 6, tema: 'sql-consultas', titulo: 'Bebidas de 1000 o más', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre todos los productos de la <b>categoría 2</b> cuyo precio sea <b>mayor o igual a 1000</b>.',
-    pista: 'Dos condiciones que deben cumplirse a la vez: AND.',
-    solucion: 'SELECT * FROM PRODUCTOS WHERE ID_CATEGORIA = 2 AND PRECIO >= 1000;',
-    explicacion: 'Con AND se cumplen ambas: refresco (1450) y jugo (1200).' });
-  ej({ g: 'A', n: 7, tema: 'sql-consultas', titulo: 'Categorías 1 o 3', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre la <b>DESCRIPCION</b> de los productos de la categoría <b>1 o 3</b>.',
-    pista: 'Puede usar OR o el operador IN con una lista.',
-    solucion: 'SELECT DESCRIPCION FROM PRODUCTOS WHERE ID_CATEGORIA IN (1, 3);',
-    explicacion: '<code>IN (1, 3)</code> equivale a <code>ID_CATEGORIA = 1 OR ID_CATEGORIA = 3</code>; ambas se aceptan.' });
-  ej({ g: 'A', n: 8, tema: 'sql-consultas', titulo: 'Facturas de septiembre de 2026', tipo: 'consulta', db: 'super',
-    enunciado: "Muestre todas las facturas con FECHA entre el <b>'2026-09-01'</b> y el <b>'2026-09-30'</b>, inclusive.",
-    pista: 'BETWEEN … AND … incluye los extremos.',
-    solucion: "SELECT * FROM FACTURAS WHERE FECHA BETWEEN '2026-09-01' AND '2026-09-30';",
-    explicacion: 'Las facturas 1 y 2 son de septiembre. También se acepta <code>FECHA &gt;= … AND FECHA &lt;= …</code>.' });
-
-  /* ---------------- B · JOIN y agregados ---------------- */
-  ej({ g: 'B', n: 1, tema: 'sql-join', titulo: 'Compras del cliente 1', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre las facturas compradas por el <b>cliente 1</b> incluyendo el nombre de los productos (Guía #1, punto 6). Columnas: <b>ID_FACTURA, FECHA, DESCRIPCION</b> (del producto).',
-    pista: 'Una FACTURAS con VENTAS por ID_FACTURA y VENTAS con PRODUCTOS por ID_PRODUCTO.',
-    solucion: 'SELECT F.ID_FACTURA, F.FECHA, P.DESCRIPCION\nFROM FACTURAS F\nJOIN VENTAS V ON V.ID_FACTURA = F.ID_FACTURA\nJOIN PRODUCTOS P ON P.ID_PRODUCTO = V.ID_PRODUCTO\nWHERE F.ID_CLIENTE = 1;',
-    explicacion: 'Se necesitan dos JOIN: la factura no guarda los productos; VENTAS es la tabla de detalle.' });
-  ej({ g: 'B', n: 2, tema: 'sql-join', titulo: 'Producto y su categoría', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre la descripción de cada <b>producto</b> junto a la descripción de su <b>categoría</b> (2 columnas).',
-    pista: 'Ambas tablas tienen DESCRIPCION: use alias para distinguirlas.',
-    solucion: 'SELECT P.DESCRIPCION, C.DESCRIPCION\nFROM PRODUCTOS P\nJOIN CATEGORIAS C ON C.ID_CATEGORIA = P.ID_CATEGORIA;',
-    explicacion: 'Los alias P y C resuelven la ambigüedad de la columna DESCRIPCION.' });
-  ej({ g: 'B', n: 3, tema: 'sql-join', titulo: 'Contar productos', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre <b>cuántos productos</b> hay registrados (una sola columna).',
-    pista: 'Función de agregado que cuenta filas.',
-    solucion: 'SELECT COUNT(*) AS CANTIDAD FROM PRODUCTOS;',
-    explicacion: '<code>COUNT(*)</code> devuelve 12. El alias de la columna no afecta la evaluación.' });
-  ej({ g: 'B', n: 4, tema: 'sql-join', titulo: 'Total de la factura 1', tipo: 'consulta', db: 'super',
-    enunciado: 'Calcule el <b>total de la factura 1</b>: la suma del precio de cada producto multiplicado por su cantidad (Guía #6, ejercicio 2).',
-    pista: 'SUM(precio × cantidad) uniendo VENTAS con PRODUCTOS y filtrando ID_FACTURA = 1.',
-    solucion: 'SELECT SUM(P.PRECIO * V.CANTIDAD) AS TOTAL\nFROM VENTAS V\nJOIN PRODUCTOS P ON P.ID_PRODUCTO = V.ID_PRODUCTO\nWHERE V.ID_FACTURA = 1;',
-    explicacion: '2 × 950 + 1 × 2100 + 3 × 1450 = 8 350.' });
-  ej({ g: 'B', n: 5, tema: 'sql-join', titulo: 'Facturas por cliente', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre el <b>ID_CLIENTE</b> y la <b>cantidad de facturas</b> de cada cliente que tenga facturas.',
-    pista: 'COUNT(*) con GROUP BY ID_CLIENTE.',
-    solucion: 'SELECT ID_CLIENTE, COUNT(*) AS CANTIDAD\nFROM FACTURAS\nGROUP BY ID_CLIENTE;',
-    explicacion: 'Es la versión orientada a conjuntos del ejercicio de cursores “clientes con más compras” (Guía #6).' });
-  ej({ g: 'B', n: 6, tema: 'sql-join', titulo: 'Top 3 más vendidos', tipo: 'consulta', db: 'super', ordenado: true,
-    enunciado: 'Muestre la <b>DESCRIPCION</b> y el <b>total de unidades vendidas</b> de los <b>3 productos más vendidos</b>, de mayor a menor (Guía #5, ejercicio 9).',
-    pista: 'SUM(CANTIDAD) agrupando por producto, ORDER BY descendente y TOP 3.',
-    solucion: 'SELECT TOP 3 P.DESCRIPCION, SUM(V.CANTIDAD) AS VENDIDOS\nFROM VENTAS V\nJOIN PRODUCTOS P ON P.ID_PRODUCTO = V.ID_PRODUCTO\nGROUP BY P.DESCRIPCION\nORDER BY VENDIDOS DESC;',
-    explicacion: 'Leche (10), Agua (6) y Yogurt (5). Sin ORDER BY, TOP no garantiza cuáles devuelve.' });
-  ej({ g: 'B', n: 7, tema: 'sql-join', titulo: 'Clientes sin compras', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre el <b>NOMBRE</b> de los clientes que <b>no tienen facturas</b> (Guía #6, ejercicio de cursores 3, resuelto con una consulta).',
-    pista: 'NOT IN con una subconsulta sobre FACTURAS.',
-    solucion: 'SELECT NOMBRE FROM CLIENTES\nWHERE ID_CLIENTE NOT IN (SELECT ID_CLIENTE FROM FACTURAS);',
-    explicacion: 'Laura Jiménez no tiene facturas. También es válido un NOT EXISTS o un LEFT JOIN … WHERE F.ID_FACTURA IS NULL.' });
-  ej({ g: 'B', n: 8, tema: 'sql-join', titulo: 'Productos de la categoría Bebidas', tipo: 'consulta', db: 'super',
-    enunciado: "Muestre la <b>DESCRIPCION</b> de los productos cuya categoría se llama <b>'Bebidas'</b>, sin escribir el número de la categoría.",
-    pista: 'Subconsulta con IN, o un JOIN con CATEGORIAS.',
-    solucion: "SELECT DESCRIPCION FROM PRODUCTOS\nWHERE ID_CATEGORIA IN (SELECT ID_CATEGORIA FROM CATEGORIAS WHERE DESCRIPCION = 'Bebidas');",
-    explicacion: 'La Guía #11 compara justamente la versión con IN y la versión con JOIN: ambas dan el mismo resultado.' });
-  ej({ g: 'B', n: 9, tema: 'sql-join', titulo: 'Historial de compras del cliente 2', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre el detalle de las compras del <b>cliente 2</b>: <b>ID_FACTURA, FECHA, DESCRIPCION, CANTIDAD</b> (Guía #5, ejercicio 8).',
-    pista: 'Igual que el ejercicio B1, agregando CANTIDAD y cambiando el cliente.',
-    solucion: 'SELECT F.ID_FACTURA, F.FECHA, P.DESCRIPCION, V.CANTIDAD\nFROM FACTURAS F\nJOIN VENTAS V ON V.ID_FACTURA = F.ID_FACTURA\nJOIN PRODUCTOS P ON P.ID_PRODUCTO = V.ID_PRODUCTO\nWHERE F.ID_CLIENTE = 2;',
-    explicacion: 'Dos facturas: la 2 (agua y café) y la de hoy (yogurt).' });
-  ej({ g: 'B', n: 10, tema: 'sql-join', titulo: 'Ventas por mes de 2026', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre el <b>número de mes</b> y el <b>total vendido</b> (precio × cantidad) de cada mes del año <b>2026</b> (Guía #5, ejercicio 10).',
-    pista: 'MONTH(FECHA) en el SELECT y en el GROUP BY; YEAR(FECHA) = 2026 en el WHERE.',
-    solucion: 'SELECT MONTH(F.FECHA) AS MES, SUM(P.PRECIO * V.CANTIDAD) AS TOTAL\nFROM FACTURAS F\nJOIN VENTAS V ON V.ID_FACTURA = F.ID_FACTURA\nJOIN PRODUCTOS P ON P.ID_PRODUCTO = V.ID_PRODUCTO\nWHERE YEAR(F.FECHA) = 2026\nGROUP BY MONTH(F.FECHA);',
-    explicacion: 'Se combinan JOIN, funciones de fecha, WHERE y GROUP BY. Las facturas de hoy cuentan en el mes actual.' });
-  ej({ g: 'B', n: 11, tema: 'sql-join', titulo: 'Facturas con más de 60 días', tipo: 'consulta', db: 'super',
-    enunciado: 'Muestre todas las facturas con <b>más de 60 días</b> de antigüedad respecto a hoy (base del ejercicio 4 de la Guía #6).',
-    pista: 'DATEDIFF(DAY, FECHA, GETDATE()) > 60',
-    solucion: 'SELECT * FROM FACTURAS WHERE DATEDIFF(DAY, FECHA, GETDATE()) > 60;',
-    explicacion: 'DATEDIFF(DAY, a, b) cuenta los días de a hasta b. El resultado depende de la fecha de hoy y la solución se calcula en vivo.' });
-
-  /* ---------------- C · Modificar datos y tablas ---------------- */
-  ej({ g: 'C', n: 1, tema: 'sql-dml', titulo: 'Insertar un cliente', tipo: 'modifica', db: 'super', tablas: ['CLIENTES'],
-    enunciado: "Inserte el cliente <b>6</b>, <b>'Sofía Brenes'</b>, dirección <b>'Limón'</b>, teléfono <b>'8888-6666'</b>.",
-    pista: 'INSERT INTO tabla (columnas) VALUES (valores).',
-    solucion: "INSERT INTO CLIENTES (ID_CLIENTE, NOMBRE, DIRECCION, TELEFONO)\nVALUES (6, 'Sofía Brenes', 'Limón', '8888-6666');",
-    explicacion: 'Se compara el contenido final de CLIENTES. Escribir la lista de columnas es opcional si se dan todos los valores en orden.' });
-  ej({ g: 'C', n: 2, tema: 'sql-dml', titulo: 'Aumentar 10% los precios', tipo: 'modifica', db: 'super', tablas: ['PRODUCTOS'],
-    enunciado: 'Aumente un <b>10 %</b> el precio de <b>todos</b> los productos (Guía #1, punto 7).',
-    pista: 'UPDATE … SET PRECIO = PRECIO * …',
-    solucion: 'UPDATE PRODUCTOS SET PRECIO = PRECIO * 1.10;',
-    explicacion: 'Multiplicar por 1.10 equivale a sumar el 10 %. También se acepta <code>PRECIO + PRECIO * 0.10</code>.' });
-  ej({ g: 'C', n: 3, tema: 'sql-dml', titulo: 'Aumento por categoría', tipo: 'modifica', db: 'super', tablas: ['PRODUCTOS'],
-    enunciado: 'Aumente un <b>5 %</b> el precio solo de los productos de la <b>categoría 2</b> (Guía #6, ejercicio 3).',
-    pista: 'Igual que el anterior, pero con WHERE.',
-    solucion: 'UPDATE PRODUCTOS SET PRECIO = PRECIO * 1.05 WHERE ID_CATEGORIA = 2;',
-    explicacion: 'Sin el WHERE se modificarían todos los productos.' });
-  ej({ g: 'C', n: 4, tema: 'sql-dml', titulo: 'Eliminar las facturas de hoy', tipo: 'modifica', db: 'super', tablas: ['FACTURAS', 'VENTAS'], nivel: 3,
-    enunciado: 'Elimine las facturas con <b>fecha de hoy</b> (Guía #1, punto 8). Recuerde que VENTAS tiene una clave foránea hacia FACTURAS: elimine primero las ventas de esas facturas.',
-    pista: 'Dos DELETE. El primero borra de VENTAS las filas cuyo ID_FACTURA esté en las facturas de hoy; la fecha de hoy es CAST(GETDATE() AS DATE).',
-    solucion: 'DELETE FROM VENTAS\nWHERE ID_FACTURA IN (SELECT ID_FACTURA FROM FACTURAS WHERE FECHA = CAST(GETDATE() AS DATE));\nDELETE FROM FACTURAS WHERE FECHA = CAST(GETDATE() AS DATE);',
-    explicacion: 'Si se borra primero FACTURAS, el motor rechaza la operación por la clave foránea (integridad referencial).' });
-  ej({ g: 'C', n: 5, tema: 'sql-dml', titulo: 'Agregar la columna STOCK', tipo: 'modifica', db: 'super', tablas: ['PRODUCTOS'],
-    enunciado: 'Agregue a PRODUCTOS la columna <b>STOCK</b> de tipo entero, <b>obligatoria</b> y con valor por defecto <b>0</b> (Guía #7, ejercicio 1).',
-    pista: 'ALTER TABLE … ADD columna tipo NOT NULL DEFAULT valor',
-    solucion: 'ALTER TABLE PRODUCTOS ADD STOCK INT NOT NULL DEFAULT 0;',
-    explicacion: 'Las filas existentes reciben el valor por defecto 0.' });
-  ej({ g: 'C', n: 6, tema: 'sql-dml', titulo: 'Tabla AuditoriaFacturas', tipo: 'estructura', nivel: 2,
-    enunciado: 'Escriba el <b>CREATE TABLE AuditoriaFacturas</b> de la Guía #7: <code>id_auditoria</code> entero autoincremental (IDENTITY(1,1)) y clave primaria, <code>id_factura</code> INT, <code>id_cliente</code> INT, <code>fecha_factura</code> DATE y <code>fecha_registro</code> DATETIME.',
-    pista: 'id_auditoria INT IDENTITY(1,1) PRIMARY KEY, y luego las demás columnas separadas por comas.',
-    solucion: 'CREATE TABLE AuditoriaFacturas (\n    id_auditoria INT IDENTITY(1,1) PRIMARY KEY,\n    id_factura INT,\n    id_cliente INT,\n    fecha_factura DATE,\n    fecha_registro DATETIME\n);',
-    checks: [
-      ['^CREATE TABLE AUDITORIAFACTURAS\\(', 'Debe empezar con CREATE TABLE AuditoriaFacturas ('],
-      ['ID_AUDITORIA INT (IDENTITY(\\(1,1\\))? PRIMARY KEY|PRIMARY KEY IDENTITY(\\(1,1\\))?)', 'id_auditoria debe ser INT con IDENTITY(1,1) y PRIMARY KEY'],
-      ['ID_FACTURA INT', 'Falta la columna id_factura INT'],
-      ['ID_CLIENTE INT', 'Falta la columna id_cliente INT'],
-      ['FECHA_FACTURA DATE', 'Falta la columna fecha_factura DATE'],
-      ['FECHA_REGISTRO DATETIME', 'Falta la columna fecha_registro DATETIME']
-    ],
-    explicacion: 'IDENTITY(1,1) genera el número automáticamente: empieza en 1 y aumenta de 1 en 1.' });
-
-  /* ---------------- D · Índices ---------------- */
-  ej({ g: 'D', n: 1, tema: 'indices-tipos', titulo: 'Índice no agrupado por nombre', tipo: 'estructura',
-    enunciado: 'Cree un índice <b>no agrupado</b> llamado <code>idx_clientes_nombre</code> sobre la columna NOMBRE de CLIENTES (Guía #3, ejercicio 3b).',
-    pista: 'CREATE NONCLUSTERED INDEX nombre ON tabla (columna)',
-    solucion: 'CREATE NONCLUSTERED INDEX idx_clientes_nombre ON CLIENTES (NOMBRE);',
-    checks: [['^CREATE (NONCLUSTERED )?INDEX IDX_CLIENTES_NOMBRE ', 'Use CREATE NONCLUSTERED INDEX idx_clientes_nombre (CREATE INDEX también crea uno no agrupado)'], ['ON CLIENTES\\(NOMBRE( ASC)?\\)', 'El índice debe ir ON CLIENTES (NOMBRE)']],
-    prohibido: [['(^| )CLUSTERED INDEX', 'Se pidió un índice NO agrupado; CLUSTERED reordenaría físicamente la tabla']],
-    explicacion: 'Puede haber varios índices no agrupados; contienen punteros a las filas.' });
-  ej({ g: 'D', n: 2, tema: 'indices-tipos', titulo: 'Índice compuesto', tipo: 'estructura',
-    enunciado: 'Cree el índice <code>idx_clientes_nombre_dir</code> sobre las columnas <b>NOMBRE</b> y <b>DIRECCION</b> de CLIENTES, en ese orden.',
-    pista: 'Un índice compuesto lista varias columnas entre paréntesis.',
-    solucion: 'CREATE INDEX idx_clientes_nombre_dir ON CLIENTES (NOMBRE, DIRECCION);',
-    checks: [['^CREATE (NONCLUSTERED )?INDEX IDX_CLIENTES_NOMBRE_DIR ', 'Use CREATE INDEX idx_clientes_nombre_dir'], ['ON CLIENTES\\(NOMBRE( ASC)?,DIRECCION( ASC)?\\)', 'Las columnas deben ser (NOMBRE, DIRECCION) en ese orden']],
-    explicacion: 'El orden de las columnas en un índice compuesto importa: favorece filtros por NOMBRE, o por NOMBRE y DIRECCION.' });
-  ej({ g: 'D', n: 3, tema: 'indices-tipos', titulo: 'Índice único en teléfono', tipo: 'estructura',
-    enunciado: 'Cree el índice <b>único</b> <code>idx_clientes_tel</code> sobre TELEFONO de CLIENTES para evitar números duplicados.',
-    pista: 'CREATE UNIQUE INDEX …',
-    solucion: 'CREATE UNIQUE INDEX idx_clientes_tel ON CLIENTES (TELEFONO);',
-    checks: [['^CREATE UNIQUE (NONCLUSTERED )?INDEX IDX_CLIENTES_TEL ', 'Use CREATE UNIQUE INDEX idx_clientes_tel'], ['ON CLIENTES\\(TELEFONO( ASC)?\\)', 'El índice debe ir ON CLIENTES (TELEFONO)']],
-    explicacion: 'Un índice único garantiza que no se repitan valores; puede ser clustered o non-clustered.' });
-  ej({ g: 'D', n: 4, tema: 'indices-tipos', titulo: 'Ver los índices', tipo: 'estructura', nivel: 1,
-    enunciado: 'Muestre los índices creados en la tabla <b>CLIENTES</b>.',
-    pista: 'Procedimiento del sistema sp_help…',
-    solucion: 'sp_helpindex CLIENTES;',
-    checks: [['^(EXEC(UTE)? )?SP_HELPINDEX \'?CLIENTES\'?$', 'Use sp_helpindex CLIENTES (con o sin EXEC)']],
-    explicacion: 'sp_helpindex lista nombre, descripción y columnas de cada índice.' });
-  ej({ g: 'D', n: 5, tema: 'indices-tipos', titulo: 'Eliminar un índice', tipo: 'estructura', nivel: 1,
-    enunciado: 'Elimine el índice <code>idx_clientes_tel</code> de la tabla CLIENTES.',
-    pista: 'DROP INDEX nombre ON tabla',
-    solucion: 'DROP INDEX idx_clientes_tel ON CLIENTES;',
-    checks: [['^DROP INDEX (IDX_CLIENTES_TEL ON CLIENTES|CLIENTES\\.IDX_CLIENTES_TEL)$', 'Use DROP INDEX idx_clientes_tel ON CLIENTES']],
-    explicacion: 'SQL Server también acepta la forma antigua DROP INDEX CLIENTES.idx_clientes_tel.' });
-  ej({ g: 'D', n: 6, tema: 'indices-tipos', titulo: 'Fragmentación alta', tipo: 'estructura', nivel: 2,
-    enunciado: 'El índice <code>idx_clientes_nombre</code> tiene <b>fragmentación alta</b>. Escriba la instrucción adecuada para corregirlo.',
-    pista: 'Con fragmentación alta no basta con reorganizar.',
-    solucion: 'ALTER INDEX idx_clientes_nombre ON CLIENTES REBUILD;',
-    checks: [['^ALTER INDEX IDX_CLIENTES_NOMBRE ON CLIENTES ', 'Use ALTER INDEX idx_clientes_nombre ON CLIENTES …'], ['REBUILD$', 'Con fragmentación alta corresponde REBUILD (reconstruir)']],
-    explicacion: 'REORGANIZE es para fragmentación baja; REBUILD reconstruye el índice completo.' });
-
-  /* ---------------- E · Seguridad y vistas ---------------- */
-  ej({ g: 'E', n: 1, tema: 'permisos-sql', titulo: 'Crear el login cajero', tipo: 'estructura',
-    enunciado: "Cree el login <b>cajero</b> con autenticación de SQL Server, contraseña <code>'Clave2026*'</code> y base por defecto <b>SUPERMERCADO</b>.",
-    pista: "CREATE LOGIN … WITH PASSWORD = '…', DEFAULT_DATABASE = …",
-    solucion: "CREATE LOGIN cajero WITH PASSWORD = 'Clave2026*', DEFAULT_DATABASE = SUPERMERCADO;",
-    checks: [['^CREATE LOGIN CAJERO WITH PASSWORD=\'', "Use CREATE LOGIN cajero WITH PASSWORD = '…'"], ['DEFAULT_DATABASE=SUPERMERCADO', 'Falta DEFAULT_DATABASE = SUPERMERCADO']],
-    prohibido: [['FROM WINDOWS', 'FROM WINDOWS es para autenticación de Windows; aquí se pidió autenticación de SQL Server']],
-    explicacion: 'Puede agregar MUST_CHANGE y CHECK_EXPIRATION = ON como en la guía; no son obligatorios en este ejercicio.' });
-  ej({ g: 'E', n: 2, tema: 'permisos-sql', titulo: 'Usuario para el login', tipo: 'estructura', nivel: 1,
-    enunciado: 'Cree en la base el usuario <b>usuario1</b> asociado al login <b>cajero</b>.',
-    pista: 'CREATE USER … FOR LOGIN …',
-    solucion: 'CREATE USER usuario1 FOR LOGIN cajero;',
-    checks: [['^CREATE USER USUARIO1 (FOR|FROM) LOGIN CAJERO$', 'Use CREATE USER usuario1 FOR LOGIN cajero']],
-    explicacion: 'El login da acceso al servidor; el usuario, a una base concreta.' });
-  ej({ g: 'E', n: 3, tema: 'permisos-sql', titulo: 'Otorgar consulta e inserción', tipo: 'estructura',
-    enunciado: 'Otorgue a <b>usuario1</b> los permisos <b>SELECT</b> e <b>INSERT</b> sobre la tabla <b>PRODUCTOS</b>.',
-    pista: 'GRANT permiso1, permiso2 ON tabla TO usuario',
-    solucion: 'GRANT SELECT, INSERT ON dbo.PRODUCTOS TO usuario1;',
-    checks: [['^GRANT (SELECT,INSERT|INSERT,SELECT) ON (OBJECT::)?PRODUCTOS TO USUARIO1$', 'Use GRANT SELECT, INSERT ON PRODUCTOS TO usuario1 (el orden de los permisos no importa)']],
-    explicacion: 'El prefijo dbo. es opcional en este ejercicio.' });
-  ej({ g: 'E', n: 4, tema: 'permisos-sql', titulo: 'Prohibir eliminar', tipo: 'estructura', nivel: 2,
-    enunciado: 'Impida explícitamente que <b>usuario1</b> pueda <b>eliminar</b> filas de PRODUCTOS, <b>aunque</b> pertenezca a un rol que sí lo permita.',
-    pista: 'No es REVOKE: hace falta la instrucción que prevalece sobre los roles.',
-    solucion: 'DENY DELETE ON dbo.PRODUCTOS TO usuario1;',
-    checks: [['^DENY DELETE ON (OBJECT::)?PRODUCTOS TO USUARIO1$', 'Use DENY DELETE ON PRODUCTOS TO usuario1']],
-    prohibido: [['^REVOKE', 'REVOKE solo quita un permiso otorgado; el rol seguiría dándolo. Se necesita DENY']],
-    explicacion: 'DENY prevalece incluso si el usuario recibe el permiso por un rol.' });
-  ej({ g: 'E', n: 5, tema: 'permisos-sql', titulo: 'Rol de consulta', tipo: 'estructura', nivel: 3,
-    enunciado: 'En tres instrucciones: (1) cree el rol <b>rol_consulta</b>, (2) otórguele <b>SELECT</b> sobre PRODUCTOS y (3) agregue a <b>usuario1</b> como miembro.',
-    pista: 'CREATE ROLE · GRANT … TO rol · ALTER ROLE … ADD MEMBER …',
-    solucion: 'CREATE ROLE rol_consulta;\nGRANT SELECT ON dbo.PRODUCTOS TO rol_consulta;\nALTER ROLE rol_consulta ADD MEMBER usuario1;',
-    checks: [['CREATE ROLE ROL_CONSULTA', 'Falta CREATE ROLE rol_consulta'], ['GRANT SELECT ON (OBJECT::)?PRODUCTOS TO ROL_CONSULTA', 'Falta GRANT SELECT ON PRODUCTOS TO rol_consulta'], ['ALTER ROLE ROL_CONSULTA ADD MEMBER USUARIO1', 'Falta ALTER ROLE rol_consulta ADD MEMBER usuario1']],
-    explicacion: 'Un rol agrupa permisos para asignarlos a varios usuarios a la vez.' });
-  ej({ g: 'E', n: 6, tema: 'control-acceso', titulo: 'Vista de productos básicos', tipo: 'modifica', db: 'super', nivel: 2,
-    verifica: 'SELECT * FROM vista_productos',
-    enunciado: 'Cree la vista <b>vista_productos</b> que muestre solo <b>ID_PRODUCTO, DESCRIPCION y PRECIO</b> de los productos con precio <b>menor a 2000</b> (vistas como mecanismo de seguridad, Guía #4).',
-    pista: 'CREATE VIEW nombre AS SELECT …',
-    solucion: 'CREATE VIEW vista_productos AS\nSELECT ID_PRODUCTO, DESCRIPCION, PRECIO\nFROM PRODUCTOS\nWHERE PRECIO < 2000;',
-    explicacion: 'Se consulta la vista creada y se compara con la esperada. La vista oculta proveedor y categoría, y los productos caros.' });
-
-  /* ---------------- F · Programación T-SQL ---------------- */
-  ej({ g: 'F', n: 1, tema: 'variables-control', titulo: 'Variable e IF…ELSE', tipo: 'estructura', nivel: 1,
-    enunciado: "Declare la variable <code>@Precio</code> DECIMAL(10,2) con valor <b>1500</b>. Si es mayor que 1000 imprima <code>'Caro'</code>; si no, <code>'Económico'</code>.",
-    pista: 'DECLARE @Precio DECIMAL(10,2) = 1500; IF … PRINT …; ELSE PRINT …;',
-    solucion: "DECLARE @Precio DECIMAL(10,2) = 1500;\nIF @Precio > 1000\n    PRINT 'Caro';\nELSE\n    PRINT 'Económico';",
-    checks: [['DECLARE @PRECIO DECIMAL\\(10,2\\)', 'Declare @Precio DECIMAL(10,2)'], ['(DECLARE @PRECIO DECIMAL\\(10,2\\)=1500|SET @PRECIO=1500)', 'Asigne el valor 1500 (en el DECLARE o con SET)'], ['IF @PRECIO>1000', 'Falta la condición IF @Precio > 1000'], ["PRINT 'CARO'", "Falta PRINT 'Caro'"], ["ELSE (BEGIN )?PRINT 'ECONOMICO'", "Falta ELSE PRINT 'Económico'"]],
-    explicacion: 'Variables locales con @; IF…ELSE para decidir.' });
-  ej({ g: 'F', n: 2, tema: 'variables-control', titulo: 'Ciclo WHILE', tipo: 'estructura', nivel: 2,
-    enunciado: 'Con un ciclo <b>WHILE</b> y la variable <code>@i</code>, imprima los números del <b>1 al 5</b>.',
-    pista: 'DECLARE @i INT = 1; WHILE @i <= 5 BEGIN … SET @i = @i + 1; END',
-    solucion: 'DECLARE @i INT = 1;\nWHILE @i <= 5\nBEGIN\n    PRINT @i;\n    SET @i = @i + 1;\nEND;',
-    checks: [['DECLARE @I INT', 'Declare @i INT'], ['(DECLARE @I INT=1|SET @I=1)', 'Inicie @i en 1'], ['WHILE @I(<=5|<6)', 'Use WHILE @i <= 5'], ['BEGIN', 'El cuerpo del ciclo va entre BEGIN y END'], ['PRINT', 'Falta el PRINT'], ['SET @I=@I\\+1|SET @I\\+=1', 'Falta incrementar: SET @i = @i + 1'], ['END', 'Falta END']],
-    explicacion: 'Sin el incremento el ciclo sería infinito.' });
-  ej({ g: 'F', n: 3, tema: 'excepciones', titulo: 'Capturar un error', tipo: 'estructura', nivel: 2,
-    enunciado: "Dentro de un bloque TRY divida <b>10 / 0</b> y en el CATCH imprima <code>'Error: '</code> concatenado con el mensaje del error.",
-    pista: 'BEGIN TRY … END TRY BEGIN CATCH PRINT … + ERROR_MESSAGE(); END CATCH',
-    solucion: "BEGIN TRY\n    DECLARE @r INT;\n    SET @r = 10 / 0;\nEND TRY\nBEGIN CATCH\n    PRINT 'Error: ' + ERROR_MESSAGE();\nEND CATCH;",
-    checks: [['BEGIN TRY', 'Falta BEGIN TRY'], ['10/0', 'Falta la división 10 / 0 dentro del TRY'], ['END TRY BEGIN CATCH', 'Después de END TRY debe ir BEGIN CATCH'], ['ERROR_MESSAGE\\(\\)', 'Use ERROR_MESSAGE() para obtener el mensaje'], ['END CATCH', 'Falta END CATCH']],
-    explicacion: 'La división entre cero genera un error que el CATCH captura.' });
-  ej({ g: 'F', n: 4, tema: 'funciones', titulo: 'Función fn_Descuento', tipo: 'estructura', nivel: 2,
-    enunciado: 'Cree la función escalar <b>fn_Descuento(@precio DECIMAL(10,2), @descuento DECIMAL(5,2))</b> que devuelva el precio con el descuento (porcentaje) aplicado, como DECIMAL(10,2) (Guía #5, ejercicio 3).',
-    pista: 'RETURNS DECIMAL(10,2) AS BEGIN RETURN @precio - @precio * @descuento / 100; END',
-    solucion: 'CREATE FUNCTION fn_Descuento (@precio DECIMAL(10,2), @descuento DECIMAL(5,2))\nRETURNS DECIMAL(10,2) AS\nBEGIN\n    RETURN @precio - (@precio * @descuento / 100);\nEND;',
-    checks: [['CREATE FUNCTION FN_DESCUENTO\\(@PRECIO DECIMAL\\(10,2\\),@DESCUENTO DECIMAL\\(5,2\\)\\)', 'Encabezado: CREATE FUNCTION fn_Descuento (@precio DECIMAL(10,2), @descuento DECIMAL(5,2))'], ['RETURNS DECIMAL\\(10,2\\)', 'Falta RETURNS DECIMAL(10,2)'], ['BEGIN', 'El cuerpo va entre BEGIN y END'], ['RETURN ', 'Falta RETURN con el cálculo'], ['@DESCUENTO/100|/100', 'El descuento es un porcentaje: divida entre 100'], ['END', 'Falta END']],
-    explicacion: 'Una función escalar devuelve un solo valor; también es válido <code>@precio * (1 - @descuento / 100)</code>.' });
-  ej({ g: 'F', n: 5, tema: 'funciones', titulo: 'Función de tabla en línea', tipo: 'estructura', nivel: 2,
-    enunciado: 'Cree la función de tabla <b>en línea</b> <b>fn_ProductosMayoresA(@precio DECIMAL(10,2))</b> que devuelva todos los PRODUCTOS con precio mayor al indicado (Guía #5, ejercicio 7).',
-    pista: 'RETURNS TABLE AS RETURN SELECT … (sin BEGIN…END)',
-    solucion: 'CREATE FUNCTION fn_ProductosMayoresA (@precio DECIMAL(10,2))\nRETURNS TABLE AS\nRETURN SELECT * FROM PRODUCTOS WHERE PRECIO > @precio;',
-    checks: [['CREATE FUNCTION FN_PRODUCTOSMAYORESA\\(@PRECIO DECIMAL\\(10,2\\)\\)', 'Encabezado: CREATE FUNCTION fn_ProductosMayoresA (@precio DECIMAL(10,2))'], ['RETURNS TABLE AS', 'Una función en línea usa RETURNS TABLE AS'], ['RETURN ?\\(? ?SELECT ','Falta RETURN SELECT …'], ['FROM PRODUCTOS', 'Debe consultar PRODUCTOS'], ['PRECIO>@PRECIO', 'Falta la condición PRECIO > @precio']],
-    prohibido: [['RETURNS @', 'Eso declara una función de valores múltiples; se pidió una en línea']],
-    explicacion: 'Se usa en el FROM: <code>SELECT * FROM fn_ProductosMayoresA(2000)</code>.' });
-  ej({ g: 'F', n: 6, tema: 'procedimientos', titulo: 'Procedimiento con parámetros', tipo: 'estructura', nivel: 2,
-    enunciado: 'Cree el procedimiento <b>ActualizarPrecioCategoria</b> que reciba <code>@id_categoria INT</code> y <code>@porcentaje DECIMAL(5,2)</code> y aumente en ese porcentaje el PRECIO de los PRODUCTOS de esa categoría (Guía #6, ejercicio 3).',
-    pista: 'CREATE PROCEDURE nombre @p1 tipo, @p2 tipo AS BEGIN UPDATE … END',
-    solucion: 'CREATE PROCEDURE ActualizarPrecioCategoria @id_categoria INT, @porcentaje DECIMAL(5,2)\nAS\nBEGIN\n    UPDATE PRODUCTOS\n    SET PRECIO = PRECIO * (1 + @porcentaje / 100)\n    WHERE ID_CATEGORIA = @id_categoria;\nEND;',
-    checks: [['CREATE (PROCEDURE|PROC) ACTUALIZARPRECIOCATEGORIA', 'Use CREATE PROCEDURE ActualizarPrecioCategoria'], ['@ID_CATEGORIA INT', 'Falta el parámetro @id_categoria INT'], ['@PORCENTAJE DECIMAL\\(5,2\\)', 'Falta el parámetro @porcentaje DECIMAL(5,2)'], ['AS', 'Falta AS'], ['UPDATE PRODUCTOS SET PRECIO=', 'Falta UPDATE PRODUCTOS SET PRECIO = …'], ['@PORCENTAJE/100', 'El porcentaje se divide entre 100'], ['WHERE ID_CATEGORIA=@ID_CATEGORIA', 'Falta WHERE ID_CATEGORIA = @id_categoria']],
-    explicacion: 'Se ejecutaría con <code>EXEC ActualizarPrecioCategoria @id_categoria = 2, @porcentaje = 10;</code>' });
-  ej({ g: 'F', n: 7, tema: 'procedimientos', titulo: 'Parámetro de salida', tipo: 'estructura', nivel: 3,
-    enunciado: 'Cree <b>ContarClientes</b> con el parámetro de salida <code>@Cantidad INT</code> que reciba la cantidad de CLIENTES. Luego declare <code>@Total</code>, ejecute el procedimiento recibiendo el valor e imprímalo.',
-    pista: 'OUTPUT va en la definición del parámetro y también en el EXEC.',
-    solucion: 'CREATE PROCEDURE ContarClientes @Cantidad INT OUTPUT\nAS\nBEGIN\n    SELECT @Cantidad = COUNT(*) FROM CLIENTES;\nEND;\n\nDECLARE @Total INT;\nEXEC ContarClientes @Cantidad = @Total OUTPUT;\nPRINT @Total;',
-    checks: [['CREATE (PROCEDURE|PROC) CONTARCLIENTES @CANTIDAD INT (OUTPUT|OUT)', 'Defina @Cantidad INT OUTPUT'], ['SELECT @CANTIDAD=COUNT\\(\\*\\) FROM CLIENTES', 'Asigne SELECT @Cantidad = COUNT(*) FROM CLIENTES'], ['DECLARE @TOTAL INT', 'Declare @Total INT'], ['EXEC(UTE)? CONTARCLIENTES (@CANTIDAD=)?@TOTAL (OUTPUT|OUT)', 'En el EXEC también va OUTPUT: EXEC ContarClientes @Cantidad = @Total OUTPUT'], ['PRINT @TOTAL', 'Falta PRINT @Total']],
-    explicacion: 'Olvidar OUTPUT en la llamada deja @Total en NULL.' });
-  ej({ g: 'F', n: 8, tema: 'cursores', titulo: 'Recorrer clientes con un cursor', tipo: 'estructura', nivel: 3,
-    enunciado: "Con un cursor llamado <b>cur</b>, recorra los NOMBRE de CLIENTES e imprima <code>'Cliente: '</code> + nombre para cada uno. Incluya los 6 pasos: declarar, abrir, primer FETCH, WHILE, cerrar y liberar.",
-    pista: 'WHILE @@FETCH_STATUS = 0 y un segundo FETCH NEXT dentro del ciclo.',
-    solucion: "DECLARE @Nombre NVARCHAR(100);\nDECLARE cur CURSOR FOR SELECT NOMBRE FROM CLIENTES;\nOPEN cur;\nFETCH NEXT FROM cur INTO @Nombre;\nWHILE @@FETCH_STATUS = 0\nBEGIN\n    PRINT 'Cliente: ' + @Nombre;\n    FETCH NEXT FROM cur INTO @Nombre;\nEND;\nCLOSE cur;\nDEALLOCATE cur;",
-    checks: [['DECLARE CUR CURSOR FOR SELECT NOMBRE FROM CLIENTES', 'Declare: DECLARE cur CURSOR FOR SELECT NOMBRE FROM CLIENTES'], ['OPEN CUR', 'Falta OPEN cur'], ['FETCH NEXT FROM CUR INTO @\\w+', 'Falta FETCH NEXT FROM cur INTO @variable'], ['WHILE @@FETCH_STATUS=0', 'Falta WHILE @@FETCH_STATUS = 0'], ['FETCH NEXT FROM CUR INTO @\\w+.*FETCH NEXT FROM CUR INTO @\\w+', 'Dentro del WHILE debe haber otro FETCH NEXT (si no, el ciclo es infinito)'], ['CLOSE CUR', 'Falta CLOSE cur'], ['DEALLOCATE CUR', 'Falta DEALLOCATE cur']],
-    explicacion: 'Orden: DECLARE → OPEN → FETCH → WHILE (con FETCH) → CLOSE → DEALLOCATE.' });
-  ej({ g: 'F', n: 9, tema: 'triggers', titulo: 'Trigger de auditoría', tipo: 'estructura', nivel: 3,
-    enunciado: 'Cree el trigger <b>trg_AuditoriaFacturas</b> que, <b>después de insertar</b> en Facturas, guarde en AuditoriaFacturas(id_factura, id_cliente, fecha_factura, fecha_registro) los datos insertados y la fecha/hora actual (Guía #7, ejercicio 3). Use las columnas id_factura, id_cliente y fecha de Facturas.',
-    pista: 'AFTER INSERT; INSERT INTO AuditoriaFacturas (…) SELECT …, GETDATE() FROM inserted',
-    solucion: 'CREATE TRIGGER trg_AuditoriaFacturas ON Facturas AFTER INSERT\nAS\nBEGIN\n    INSERT INTO AuditoriaFacturas (id_factura, id_cliente, fecha_factura, fecha_registro)\n    SELECT id_factura, id_cliente, fecha, GETDATE() FROM inserted;\nEND;',
-    checks: [['CREATE TRIGGER TRG_AUDITORIAFACTURAS ON FACTURAS (AFTER|FOR) INSERT', 'Encabezado: CREATE TRIGGER trg_AuditoriaFacturas ON Facturas AFTER INSERT'], ['INSERT INTO AUDITORIAFACTURAS', 'Falta INSERT INTO AuditoriaFacturas'], ['SELECT .*GETDATE\\(\\).* FROM INSERTED', 'Tome los datos con SELECT … GETDATE() FROM inserted (orientado a conjuntos)']],
-    explicacion: 'Usar SELECT … FROM inserted funciona aunque se inserten varias facturas en una sola instrucción.' });
-  ej({ g: 'F', n: 10, tema: 'triggers', titulo: 'Borrado lógico', tipo: 'estructura', nivel: 3,
-    enunciado: "Cree el trigger <b>trg_borrado_logico</b> que, <b>en lugar de</b> eliminar productos, cambie su columna estado a <code>'inactivo'</code> (Guía #7, ejercicio 5). La clave de Productos es id_producto.",
-    pista: 'INSTEAD OF DELETE; UPDATE … WHERE id_producto IN (SELECT id_producto FROM deleted)',
-    solucion: "CREATE TRIGGER trg_borrado_logico ON Productos\nINSTEAD OF DELETE\nAS\nBEGIN\n    UPDATE Productos SET estado = 'inactivo'\n    WHERE id_producto IN (SELECT id_producto FROM deleted);\nEND;",
-    checks: [['CREATE TRIGGER TRG_BORRADO_LOGICO ON PRODUCTOS INSTEAD OF DELETE', 'Encabezado: CREATE TRIGGER trg_borrado_logico ON Productos INSTEAD OF DELETE'], ["UPDATE PRODUCTOS SET ESTADO='INACTIVO'", "Falta UPDATE Productos SET estado = 'inactivo'"], ['DELETED', 'Use la tabla DELETED para saber qué productos se intentó borrar']],
-    prohibido: [['AFTER DELETE', 'AFTER DELETE se ejecuta cuando la fila ya se borró; se necesita INSTEAD OF']],
-    explicacion: 'INSTEAD OF reemplaza el DELETE: la fila no se borra, solo se marca.' });
 
   /* ---------------- G · Transacciones y concurrencia ---------------- */
   ej({ g: 'G', n: 1, tema: 'transacciones', titulo: 'Transferencia segura', tipo: 'estructura', nivel: 2,
@@ -396,6 +80,43 @@
     pista: 'La condición de saldo va en el WHERE, junto con LibroID = 1.',
     solucion: 'UPDATE Libro SET Disponibles = Disponibles - 1\nWHERE LibroID = 1 AND Disponibles >= 1;',
     explicacion: 'La segunda ejecución no encuentra filas (Disponibles ya es 0) y @@ROWCOUNT valdría 0. Sin la condición, el CHECK rechazaría el negativo con un error, pero no se informaría bien al usuario.' });
+
+  ej({ g: 'G', n: 5, tema: 'bloqueos', titulo: 'Tiempo límite de espera', tipo: 'estructura', nivel: 1,
+    enunciado: 'Configure la sesión para que una instrucción espere <b>como máximo 15 segundos</b> por un bloqueo (Guía #9).',
+    pista: 'SET LOCK_TIMEOUT recibe milisegundos.',
+    solucion: 'SET LOCK_TIMEOUT 15000;',
+    checks: [['^SET LOCK_TIMEOUT 15000$', 'Use SET LOCK_TIMEOUT 15000 (milisegundos)']],
+    explicacion: '15000 ms = 15 s. Con -1 no hay límite. Si se agota, SQL Server devuelve el error 1222.' });
+  ej({ g: 'G', n: 6, tema: 'bloqueos', titulo: 'Reservar una fila con UPDLOCK y HOLDLOCK', tipo: 'estructura', nivel: 2,
+    enunciado: 'Como la sesión A de la Guía #9: abra una transacción, seleccione la fila con <b>ID = 1</b> de <code>dbo.Test</code> con intención de actualizar y protección serializable, espere <b>10 segundos</b> y confirme.',
+    pista: "WITH (UPDLOCK, HOLDLOCK) y WAITFOR DELAY '00:00:10'",
+    solucion: "BEGIN TRAN;\nSELECT * FROM dbo.Test WITH (UPDLOCK, HOLDLOCK)\nWHERE ID = 1;\nWAITFOR DELAY '00:00:10';\nCOMMIT;",
+    checks: [['^BEGIN TRAN(SACTION)?', 'Empiece con BEGIN TRAN'], ['FROM TEST WITH\\((UPDLOCK,HOLDLOCK|HOLDLOCK,UPDLOCK)\\)', 'Use FROM dbo.Test WITH (UPDLOCK, HOLDLOCK)'], ['WHERE ID=1', 'Falta WHERE ID = 1'], ["WAITFOR DELAY '00:00:10'", "Falta WAITFOR DELAY '00:00:10'"], ['COMMIT( TRAN(SACTION)?)?$', 'Termine con COMMIT']],
+    explicacion: 'UPDLOCK pide bloqueos de actualización y HOLDLOCK mantiene semántica SERIALIZABLE: un UPDATE de otra sesión debe esperar.' });
+  ej({ g: 'G', n: 7, tema: 'aislamiento', titulo: 'Leer sin confirmar', tipo: 'estructura', nivel: 2,
+    enunciado: 'Como la sesión B de la actividad 2 (Guía #9): cambie al nivel que permite <b>lecturas sucias</b> y consulte <code>Disponibles</code> del libro <b>1</b> en <code>dbo.Libro</code>.',
+    pista: 'Nivel menos estricto + SELECT … WHERE LibroID = 1',
+    solucion: 'SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\nSELECT Disponibles FROM dbo.Libro WHERE LibroID = 1;',
+    checks: [['SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED', 'Use SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED'], ['SELECT DISPONIBLES FROM LIBRO WHERE LIBROID=1', 'Falta SELECT Disponibles FROM dbo.Libro WHERE LibroID = 1'], ['UNCOMMITTED.*SELECT', 'El nivel se fija antes de la consulta']],
+    explicacion: 'Con READ UNCOMMITTED, B ve el 2 que A no ha confirmado; tras el ROLLBACK de A vuelve a ver 10.' });
+  ej({ g: 'G', n: 8, tema: 'aislamiento', titulo: 'Habilitar y usar SNAPSHOT', tipo: 'estructura', nivel: 3,
+    enunciado: 'Habilite el aislamiento por instantánea en la base <b>LabConcurrenciaG9</b> y luego, en la sesión, establezca el nivel <b>SNAPSHOT</b> e inicie una transacción.',
+    pista: 'ALTER DATABASE … SET ALLOW_SNAPSHOT_ISOLATION ON; SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;',
+    solucion: 'ALTER DATABASE LabConcurrenciaG9 SET ALLOW_SNAPSHOT_ISOLATION ON;\nSET TRANSACTION ISOLATION LEVEL SNAPSHOT;\nBEGIN TRAN;',
+    checks: [['ALTER DATABASE LABCONCURRENCIAG9 SET ALLOW_SNAPSHOT_ISOLATION ON', 'Falta ALTER DATABASE LabConcurrenciaG9 SET ALLOW_SNAPSHOT_ISOLATION ON'], ['SET TRANSACTION ISOLATION LEVEL SNAPSHOT', 'Falta SET TRANSACTION ISOLATION LEVEL SNAPSHOT'], ['SNAPSHOT BEGIN TRAN(SACTION)?', 'Después del nivel, BEGIN TRAN']],
+    explicacion: 'Dentro de la transacción se lee la versión confirmada al inicio, aunque otra sesión cambie el dato.' });
+  ej({ g: 'G', n: 9, tema: 'transacciones', titulo: 'Rollback por stock insuficiente', tipo: 'estructura', nivel: 3,
+    enunciado: "Guía #8, ejercicio 4: en una transacción, lea el stock del producto 1 en <code>@stock_actual</code>. Si es <b>al menos 10</b>, réstele 10 y confirme; si no, imprima <code>'Stock insuficiente'</code> y revierta. (Tabla Productos: id_producto, stock.)",
+    pista: 'BEGIN TRANSACTION; DECLARE …; SELECT @stock_actual = stock …; IF @stock_actual >= 10 BEGIN … COMMIT; END ELSE BEGIN … ROLLBACK; END',
+    solucion: "BEGIN TRANSACTION;\nDECLARE @stock_actual INT;\nSELECT @stock_actual = stock FROM Productos WHERE id_producto = 1;\nIF @stock_actual >= 10\nBEGIN\n    UPDATE Productos SET stock = stock - 10 WHERE id_producto = 1;\n    COMMIT;\nEND\nELSE\nBEGIN\n    PRINT 'Stock insuficiente';\n    ROLLBACK;\nEND",
+    checks: [['BEGIN TRAN(SACTION)?', 'Falta BEGIN TRANSACTION'], ['DECLARE @STOCK_ACTUAL INT', 'Declare @stock_actual INT'], ['SELECT @STOCK_ACTUAL=STOCK FROM PRODUCTOS WHERE ID_PRODUCTO=1', 'Lea el stock: SELECT @stock_actual = stock FROM Productos WHERE id_producto = 1'], ['IF @STOCK_ACTUAL>=10', 'Falta IF @stock_actual >= 10'], ['STOCK=STOCK-10 WHERE ID_PRODUCTO=1.*COMMIT', 'Si alcanza: UPDATE … stock - 10 y COMMIT'], ["ELSE .*PRINT 'STOCK INSUFICIENTE'.*ROLLBACK", "Si no alcanza: PRINT 'Stock insuficiente' y ROLLBACK"]],
+    explicacion: 'Cada camino del IF termina la transacción: COMMIT si hay stock, ROLLBACK si no.' });
+  ej({ g: 'G', n: 10, tema: 'bloqueos', titulo: 'Limpieza tras un interbloqueo', tipo: 'estructura', nivel: 2,
+    enunciado: 'Después del error <b>1205</b> de la actividad 5 (Guía #9), revierta la transacción <b>solo si sigue abierta</b> y restablezca LOCK_TIMEOUT a 15 segundos y el aislamiento a READ COMMITTED.',
+    pista: 'IF @@TRANCOUNT > 0 ROLLBACK; …',
+    solucion: 'IF @@TRANCOUNT > 0 ROLLBACK;\nSET LOCK_TIMEOUT 15000;\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;',
+    checks: [['IF @@TRANCOUNT>0 ROLLBACK', 'Falta IF @@TRANCOUNT > 0 ROLLBACK'], ['SET LOCK_TIMEOUT 15000', 'Falta SET LOCK_TIMEOUT 15000'], ['SET TRANSACTION ISOLATION LEVEL READ COMMITTED', 'Falta SET TRANSACTION ISOLATION LEVEL READ COMMITTED']],
+    explicacion: '@@TRANCOUNT indica cuántas transacciones hay abiertas; así no se intenta revertir algo que ya terminó.' });
 
   /* ---------------- H · Respaldo y recuperación ---------------- */
   ej({ g: 'H', n: 1, tema: 'fallas-respaldo', titulo: 'Consultar el modelo de recuperación', tipo: 'estructura', nivel: 1,
@@ -435,6 +156,13 @@
     solucion: "RESTORE DATABASE BARES\nFROM DISK = 'C:\\RESPALDO\\BARES_FULL.BAK'\nWITH RECOVERY, REPLACE;",
     checks: [['^RESTORE DATABASE BARES FROM DISK=', 'Use RESTORE DATABASE BARES FROM DISK = …'], ['BARES_FULL\\.BAK', 'Revise la ruta del archivo'], ['WITH .*RECOVERY', 'RECOVERY deja la base operativa'], ['WITH .*REPLACE', 'REPLACE permite sobrescribir la base existente']],
     explicacion: 'El orden de RECOVERY y REPLACE no importa.' });
+
+  ej({ g: 'H', n: 7, tema: 'transacciones', titulo: 'Consultar el log de transacciones', tipo: 'estructura', nivel: 1,
+    enunciado: 'Muestre <b>todos los detalles</b> del log de transacciones de la base actual con la función que presenta la Guía #8.',
+    pista: 'SELECT * FROM ::fn_dblog(NULL, NULL)',
+    solucion: 'SELECT * FROM ::fn_dblog(NULL, NULL);',
+    checks: [['^SELECT \\* FROM (::)?FN_DBLOG\\(NULL,NULL\\)$', 'Use SELECT * FROM ::fn_dblog(NULL, NULL)']],
+    explicacion: 'Para ver detalles mínimos existe el comando DBCC LOG(nombre_base, 0). El log permite rehacer lo confirmado y deshacer lo no confirmado.' });
 
   /* ---------------- I · Optimización ---------------- */
   ej({ g: 'I', n: 1, tema: 'optimizacion-practica', titulo: 'Quitar la función de la columna', tipo: 'consulta', db: 'taller', nivel: 2,
@@ -489,35 +217,7 @@
     prohibido: [['SELECT \\*', 'Evite SELECT *: seleccione solo las columnas necesarias'], ['(YEAR|MONTH|DATEPART|CONVERT|CAST)\\( ?FECHA_CONTRATACION', 'Todavía aplica una función sobre fecha_contratacion']],
     explicacion: 'Menos columnas = menos datos leídos y transferidos; el rango permite usar índices.' });
 
-  /* ---------------- J · BD distribuidas ---------------- */
-  ej({ g: 'J', n: 1, tema: 'servidores-vinculados', titulo: 'Crear el servidor vinculado', tipo: 'estructura', nivel: 2,
-    enunciado: "Cree el servidor vinculado <b>Sucursal2</b> con proveedor <b>MSOLEDBSQL</b>, producto vacío y origen de datos <code>'192.168.42.213,1433'</code>.",
-    pista: "EXEC sp_addlinkedserver @server = '…', @srvproduct = '', @provider = '…', @datasrc = '…'",
-    solucion: "EXEC sp_addlinkedserver\n    @server = 'Sucursal2',\n    @srvproduct = '',\n    @provider = 'MSOLEDBSQL',\n    @datasrc = '192.168.42.213,1433';",
-    checks: [['^EXEC(UTE)? (MASTER\\.)?SP_ADDLINKEDSERVER', 'Use EXEC sp_addlinkedserver'], ["@SERVER='SUCURSAL2'", "Falta @server = 'Sucursal2'"], ["@SRVPRODUCT=''", "Falta @srvproduct = ''"], ["@PROVIDER='MSOLEDBSQL'", "Falta @provider = 'MSOLEDBSQL'"], ["@DATASRC='192\\.168\\.42\\.213,1433'", "Falta @datasrc = '192.168.42.213,1433'"]],
-    explicacion: '@server es el nombre lógico con el que se escribirán las consultas.' });
-  ej({ g: 'J', n: 2, tema: 'servidores-vinculados', titulo: 'Credenciales del vínculo', tipo: 'estructura', nivel: 2,
-    enunciado: "Configure el inicio de sesión remoto para <b>Sucursal2</b> sin usar las credenciales propias, con usuario <code>'remoto'</code> y contraseña <code>'1234'</code>.",
-    pista: "EXEC sp_addlinkedsrvlogin @rmtsrvname = …, @useself = 'false', @rmtuser = …, @rmtpassword = …",
-    solucion: "EXEC sp_addlinkedsrvlogin\n    @rmtsrvname = 'Sucursal2',\n    @useself = 'false',\n    @rmtuser = 'remoto',\n    @rmtpassword = '1234';",
-    checks: [['^EXEC(UTE)? (MASTER\\.)?SP_ADDLINKEDSRVLOGIN', 'Use EXEC sp_addlinkedsrvlogin'], ["@RMTSRVNAME='SUCURSAL2'", "Falta @rmtsrvname = 'Sucursal2'"], ["@USESELF='?FALSE'?", "Falta @useself = 'false'"], ["@RMTUSER='REMOTO'", "Falta @rmtuser = 'remoto'"], ["@RMTPASSWORD='1234'", "Falta @rmtpassword = '1234'"]],
-    explicacion: "@useself = 'false' indica que se usarán las credenciales remotas indicadas." });
-  ej({ g: 'J', n: 3, tema: 'servidores-vinculados', titulo: 'Consulta remota', tipo: 'estructura', nivel: 2,
-    enunciado: 'Consulte todas las filas de la tabla <b>Productos</b> (esquema dbo) de la base <b>TiendaSucursal2</b> en el servidor vinculado <b>Sucursal2</b>.',
-    pista: 'Nombre de cuatro partes: servidor.base.esquema.tabla',
-    solucion: 'SELECT * FROM Sucursal2.TiendaSucursal2.dbo.Productos;',
-    keepDbo: true,
-    checks: [['^SELECT \\* FROM SUCURSAL2\\.TIENDASUCURSAL2\\.DBO\\.PRODUCTOS$', 'Use SELECT * FROM Sucursal2.TiendaSucursal2.dbo.Productos (cuatro partes)']],
-    explicacion: 'Los corchetes son opcionales: [Sucursal2].[TiendaSucursal2].[dbo].[Productos].' });
-  ej({ g: 'J', n: 4, tema: 'servidores-vinculados', titulo: 'JOIN entre sucursales', tipo: 'estructura', nivel: 3,
-    enunciado: 'Muestre <b>A.ID, A.Nombre y B.Precio</b> uniendo <code>TiendaSucursal1.dbo.Productos</code> (alias A, local) con <code>Sucursal2.TiendaSucursal2.dbo.Productos</code> (alias B, remota) por ID.',
-    pista: 'SELECT … FROM local A JOIN remoto B ON A.ID = B.ID',
-    solucion: 'SELECT A.ID, A.Nombre, B.Precio\nFROM TiendaSucursal1.dbo.Productos A\nJOIN Sucursal2.TiendaSucursal2.dbo.Productos B ON A.ID = B.ID;',
-    keepDbo: true,
-    checks: [['^SELECT A\\.ID,A\\.NOMBRE,B\\.PRECIO ', 'Seleccione A.ID, A.Nombre, B.Precio'], ['FROM TIENDASUCURSAL1\\.DBO\\.PRODUCTOS (AS )?A ', 'La tabla local es TiendaSucursal1.dbo.Productos con alias A'], ['(INNER )?JOIN SUCURSAL2\\.TIENDASUCURSAL2\\.DBO\\.PRODUCTOS (AS )?B ', 'La remota es Sucursal2.TiendaSucursal2.dbo.Productos con alias B'], ['ON (A\\.ID=B\\.ID|B\\.ID=A\\.ID)$', 'La condición es ON A.ID = B.ID']],
-    explicacion: 'Un JOIN distribuido combina datos locales y remotos en una sola consulta.' });
-
   // numeración global y nivel por defecto
-  E.forEach(function (e, i) { e.id = 'sql-' + e.g + e.n; e.idx = i; if (!e.nivel) e.nivel = (e.g === 'A' ? 1 : (e.tipo === 'consulta' || e.tipo === 'modifica') ? 2 : 2); });
+  E.forEach(function (e, i) { e.id = 'sql-' + e.g + e.n; e.idx = i; if (!e.nivel) e.nivel = 2; });
   window.LAB_SQL = { BASES: BASES, GRUPOS: GRUPOS, EJERCICIOS: E };
 })();

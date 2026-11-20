@@ -6,7 +6,7 @@ Plataforma web de estudio que complementa al videojuego **Servidor Nocturno**. E
 - **Practicar:** 275 preguntas: selección única, verdadero o falso, aplicación numérica y comprensión. Cada una tiene dificultad y explicación.
 - **Ejercicios prácticos generados:** concurrencia, grafo de precedencia, recuperabilidad, marcas de tiempo, cadena de respaldos, recuperación con el log y árboles de consulta. Se crean nuevos cada vez y se corrigen solos.
 - **Simulacro de examen:** de 10 a 20 preguntas teóricas más 10 ejercicios prácticos (concurrencia, planificación, respaldo, recuperación, optimización de consultas y MongoDB), con nota al entregar.
-- **Laboratorio SQL:** 69 ejercicios. Las consultas se ejecutan en SQLite (sql.js) adaptando la sintaxis de SQL Server. Las instrucciones de administración (índices, permisos, procedimientos, triggers, respaldos, servidores vinculados) se revisan por su estructura.
+- **Laboratorio SQL:** 25 ejercicios, solo de los temas prácticos del examen: concurrencia y transacciones, respaldo y recuperación, y optimización de consultas. Las consultas se ejecutan en SQLite (sql.js) adaptando la sintaxis de SQL Server; las instrucciones de administración se revisan por su estructura.
 - **Laboratorio MongoDB:** 27 ejercicios con un intérprete MQL propio. Se compara el resultado o la colección final.
 - **Mi progreso:** se guarda en el navegador (`localStorage`).
 - **Cobertura del temario:** matriz documento, tema, subtema y sección (también en `COBERTURA.md`).

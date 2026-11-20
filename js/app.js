@@ -351,7 +351,7 @@
       '<div id="salida" aria-live="polite"></div></div>' +
       '<nav class="tema-nav">' + (ant ? '<a class="tarjeta" href="#/' + tipo + '/' + ant.id + '"><small>← Anterior</small><b>' + esc(ant.titulo) + '</b></a>' : '<span></span>') + (sig ? '<a class="tarjeta sig" href="#/' + tipo + '/' + sig.id + '"><small>Siguiente →</small><b>' + esc(sig.titulo) + '</b></a>' : '<span></span>') + '</nav>';
     var intro = '<div class="encabezado"><h1>' + (tipo === 'sql' ? 'Laboratorio SQL' : 'Laboratorio MongoDB') + '</h1><p>' + (tipo === 'sql'
-      ? 'Ejercicios progresivos sobre el modelo Supermercado de la Guía #1 y las bases de las guías. Las consultas se ejecutan en un simulador de SQL dentro del navegador; las instrucciones propias de la administración de SQL Server se revisan por su estructura.'
+      ? 'Solo los temas prácticos del examen: <b>concurrencia y transacciones</b>, <b>respaldo y recuperación</b> y <b>optimización de consultas</b>. Las consultas se ejecutan en un simulador de SQL dentro del navegador; las instrucciones de administración de SQL Server se revisan por su estructura. La <b>planificación</b> se practica en <a href="#/practico/conflictos">grafo de precedencia</a>, <a href="#/practico/recuperabilidad">recuperabilidad</a> y <a href="#/practico/marcas">marcas de tiempo</a>; <b>MongoDB</b>, en su <a href="#/mongo">laboratorio</a>.'
       : 'Escriba MQL como en la Guía #13. El laboratorio ejecuta sus instrucciones sobre las colecciones estudiantes y cursos y compara el resultado.') +
       ' Resueltos: <b>' + hechos + '/' + lista.length + '</b>.</p></div>';
     return '<div class="contenedor">' + intro + '<div class="lab">' + nav + '<div>' + cuerpo + '</div></div></div>';
