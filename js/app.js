@@ -277,7 +277,8 @@
   }
   function retro(ok, titulo, cuerpo, q) {
     var t = temaPorId[q.tema];
-    return '<div class="retro ' + (ok === true ? 'ok' : ok === false ? 'bad' : 'neutro') + '"><div class="retro-tit">' + ICON(ok === true ? 'ok' : ok === false ? 'bad' : 'info') + titulo + '</div>' + cuerpo + '<p class="peq" style="margin-top:6px">Tema: <a href="#/tema/' + t.id + '">' + esc(t.titulo) + '</a></p></div>';
+    var enlace = t ? '<p class="peq" style="margin-top:6px">Tema: <a href="#/tema/' + t.id + '">' + esc(t.titulo) + '</a></p>' : '';
+    return '<div class="retro ' + (ok === true ? 'ok' : ok === false ? 'bad' : 'neutro') + '"><div class="retro-tit">' + ICON(ok === true ? 'ok' : ok === false ? 'bad' : 'info') + titulo + '</div>' + cuerpo + enlace + '</div>';
   }
   function registrar(q, ok) {
     if (q.gen) { marcador(); return; }
@@ -400,6 +401,7 @@
       '<nav class="tema-nav">' + (ant ? '<a class="tarjeta" href="#/' + tipo + '/' + ant.id + '"><small>← Anterior</small><b>' + esc(ant.titulo) + '</b></a>' : '<span></span>') + (sig ? '<a class="tarjeta sig" href="#/' + tipo + '/' + sig.id + '"><small>Siguiente →</small><b>' + esc(sig.titulo) + '</b></a>' : '<span></span>') + '</nav>';
     var intro = '<div class="encabezado"><h1>' + (tipo === 'sql' ? 'Laboratorio SQL' : 'Laboratorio MongoDB') + '</h1><p>' + (tipo === 'sql'
       ? 'Solo los temas prácticos del examen: <b>concurrencia y transacciones</b>, <b>respaldo y recuperación</b> y <b>optimización de consultas</b>. Las consultas se ejecutan en un simulador de SQL dentro del navegador; las instrucciones de administración de SQL Server se revisan por su estructura. La <b>planificación</b> se practica en <a href="#/practico/conflictos">grafo de precedencia</a>, <a href="#/practico/recuperabilidad">recuperabilidad</a> y <a href="#/practico/marcas">marcas de tiempo</a>; <b>MongoDB</b>, en su <a href="#/mongo">laboratorio</a>.'
+      + ' <a class="btn primario chico" href="#/mv" style="margin-top:8px">' + ICON('check') + 'Examen de prueba de Mediación Virtual (80 preguntas + práctica)</a>'
       : 'Escriba MQL como en la Guía #13. El laboratorio ejecuta sus instrucciones sobre las colecciones estudiantes y cursos y compara el resultado.') +
       ' Resueltos: <b>' + hechos + '/' + lista.length + '</b>.</p></div>';
     return '<div class="contenedor">' + intro + '<div class="lab">' + nav + '<div>' + cuerpo + '</div></div></div>';
@@ -598,12 +600,15 @@
         '<button class="btn primario" id="iniciarSim">' + ICON('play') + 'Comenzar simulacro</button></div>' +
         (hist.length ? '<div class="tarjeta"><h2>Simulacros anteriores</h2>' + hist.map(function (h) { return '<div class="prog-fila"><span>' + new Date(h.fecha).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' }) + ' · teoría ' + h.teo + ' · práctica ' + h.prac + '</span>' + barra(h.nota) + '<span class="num">' + h.nota + '</span></div>'; }).join('') + '</div>' : '') + '</div>';
     }
-    var E = EXAMEN, n = 0;
+    return vExamen(EXAMEN, 'Simulacro');
+  }
+  function vExamen(E, titulo) {
+    var n = 0;
     var teo = E.teoria.map(function (q, i) {
       n++;
       var cuerpo = q.t === 'mc' ? '<div class="opciones">' + q.ops.map(function (o, j) { return '<label class="opcion"><input type="radio" name="sq' + i + '" value="' + j + '"><span class="letra">' + 'ABCD'[j] + '</span><span>' + esc(o) + '</span></label>'; }).join('') + '</div>'
         : '<div class="opciones vf"><label class="opcion"><input type="radio" name="sq' + i + '" value="1"><span class="letra">V</span><span>Verdadero</span></label><label class="opcion"><input type="radio" name="sq' + i + '" value="0"><span class="letra">F</span><span>Falso</span></label></div>';
-      return '<div class="tarjeta preg sim-item" data-k="t' + i + '"><div class="preg-cab"><span class="preg-n">' + n + '.</span><span class="chip">' + TIPO_Q[q.t] + '</span></div><div class="preg-q">' + esc(q.q) + '</div>' + cuerpo + '<div class="sim-corr"></div></div>';
+      return '<div class="tarjeta preg sim-item" data-k="t' + i + '"><div class="preg-cab"><span class="preg-n">' + n + '.</span><span class="chip">' + TIPO_Q[q.t] + '</span>' + (q.grupo ? '<span class="chip suave">' + esc(EXAMEN_MV.NOMBRE[q.grupo]) + '</span>' : '') + '</div><div class="preg-q">' + esc(q.q) + '</div>' + cuerpo + '<div class="sim-corr"></div></div>';
     }).join('');
     var pra = E.practica.map(function (it, i) {
       n++;
@@ -614,7 +619,7 @@
       return '<div class="tarjeta sim-item" data-k="p' + i + '">' + cab + '<p class="enunciado">' + ex.enunciado + '</p>' + (it.lab === 'sql' ? esquemaSQL(ex.db) : esquemaMongo(ex.datos)) +
         '<div class="editor-caja"><div class="editor-cab"><span>' + (it.lab === 'sql' ? 'SQL Server (T-SQL)' : 'MongoDB Shell (MQL)') + '</span></div><textarea class="editor" spellcheck="false" autocapitalize="off" data-cod="' + i + '" aria-label="Respuesta del ejercicio ' + n + '"></textarea></div><div class="sim-corr"></div></div>';
     }).join('');
-    return '<div class="contenedor estrecho"><div class="barra-examen tarjeta"><div><b>Simulacro</b> · <span id="simReloj">00:00</span> · <span id="simResp"></span></div><button class="btn primario" id="entregar"' + (E.entregado ? ' hidden' : '') + '>' + ICON('check') + 'Entregar</button><button class="btn" id="nuevoSim"' + (E.entregado ? '' : ' hidden') + '>' + ICON('refresh') + 'Nuevo simulacro</button></div>' +
+    return '<div class="contenedor estrecho"><div class="barra-examen tarjeta"><div><b>' + esc(titulo) + '</b> · ' + (E.mv ? 'sin tiempo' : '<span id="simReloj">00:00</span>') + ' · <span id="simResp"></span></div><button class="btn primario" id="entregar"' + (E.entregado ? ' hidden' : '') + '>' + ICON('check') + 'Entregar</button><button class="btn" id="nuevoSim"' + (E.entregado ? '' : ' hidden') + '>' + ICON('refresh') + 'Nuevo intento</button></div>' +
       '<div id="simResumen"></div><h2 class="sim-sec">Parte teórica · ' + E.teoria.length + ' preguntas</h2>' + teo + '<h2 class="sim-sec">Parte práctica · ' + E.practica.length + ' ejercicios</h2>' + pra +
       '<div class="tarjeta" style="margin-top:16px;text-align:center"><button class="btn primario" id="entregar2">' + ICON('check') + 'Entregar simulacro</button></div></div>';
   }
@@ -625,7 +630,9 @@
       raiz.querySelector('#iniciarSim').addEventListener('click', function () { EXAMEN = crearExamen(nTeoria); render(); window.scrollTo(0, 0); });
       return;
     }
-    var E = EXAMEN;
+    enlazarExamen(raiz, EXAMEN, function () { EXAMEN = null; });
+  }
+  function enlazarExamen(raiz, E, alNuevo) {
     function contar() {
       var r = 0; E.teoria.forEach(function (q, i) { if (raiz.querySelector('input[name="sq' + i + '"]:checked')) r++; });
       var el = raiz.querySelector('#simResp'); if (el) el.textContent = r + '/' + E.teoria.length + ' teóricas respondidas';
@@ -664,7 +671,7 @@
       });
       Promise.all(pendientes).then(function () {
         var total = E.teoria.length + mp, nota = Math.round((pt + pp) * 100 / total);
-        P.simulacros = (P.simulacros || []).concat([{ fecha: Date.now(), nota: nota, teo: pt + '/' + E.teoria.length, prac: pp + '/' + mp }]).slice(-20); guardar();
+        if (E.mv) { P.mv = P.mv || {}; P.mv[E.bloque] = { nota: nota, fecha: Date.now() }; } else P.simulacros = (P.simulacros || []).concat([{ fecha: Date.now(), nota: nota, teo: pt + '/' + E.teoria.length, prac: pp + '/' + mp }]).slice(-20); guardar();
         raiz.querySelector('#simResumen').innerHTML = '<div class="tarjeta"><div class="resumen-quiz"><div><h2 style="margin:0">Resultado: ' + nota + ' / 100</h2><p class="muted" style="margin:6px 0 0">Teoría: <b>' + pt + '/' + E.teoria.length + '</b> · Práctica: <b>' + pp + '/' + mp + '</b> puntos</p></div><div class="anillo" style="--p:' + nota + '"><span>' + nota + '</span></div></div>' +
           '<div style="margin-top:12px">' + Object.keys(porCat).map(function (k) { var v = porCat[k]; return '<div class="prog-fila"><span>' + esc(k) + '</span>' + barra(pct(v[0], v[1])) + '<span class="num">' + v[0] + '/' + v[1] + '</span></div>'; }).join('') + '</div>' +
           '<p class="peq muted" style="margin-top:10px">Debajo de cada pregunta está la corrección y el tema que conviene repasar.</p></div>';
@@ -674,9 +681,48 @@
     }
     raiz.querySelector('#entregar').addEventListener('click', entregar);
     raiz.querySelector('#entregar2').addEventListener('click', entregar);
-    raiz.querySelector('#nuevoSim').addEventListener('click', function () { EXAMEN = null; render(); window.scrollTo(0, 0); });
+    raiz.querySelector('#nuevoSim').addEventListener('click', function () { alNuevo(); render(); window.scrollTo(0, 0); });
     raiz.querySelectorAll('textarea.editor').forEach(function (ed) { ed.addEventListener('keydown', function (ev) { if (ev.key === 'Tab' && !ev.shiftKey) { ev.preventDefault(); ed.setRangeText('  ', ed.selectionStart, ed.selectionEnd, 'end'); } }); });
     if (E.practica.some(function (it) { return it.lab === 'sql'; })) MOTOR_SQL.cargar().catch(function () {});
+  }
+
+  /* ------------------------- examen de prueba (Mediación Virtual) ------------------------- */
+  var EXAMEN_MVA = null;
+  var PRACT_MV = [['concurrencia', 'conflictos', 'respaldo', 'arbol'], ['log', 'recuperabilidad', 'respaldo', 'marcas'], ['concurrencia', 'marcas', 'log', 'arbol'], ['conflictos', 'recuperabilidad', 'respaldo', 'log']];
+  function crearExamenMV(b) {
+    var seed = Date.now() >>> 0, mix = b === 'mix';
+    var lista = mix ? barajar(EXAMEN_MV.PREGUNTAS, seed).slice(0, 20) : EXAMEN_MV.BLOQUES[b];
+    var teoria = barajar(lista, seed).map(function (p) {
+      return { id: 'mv-' + p.n, t: 'mc', q: p.q, o: [p.o[p.c]].concat(p.o.filter(function (_, i) { return i !== p.c; })), e: p.e + (p.v ? ' (Depende de un artículo de las investigaciones: conviene verificarla.)' : ''), tema: EXAMEN_MV.TEMA[p.g], gen: true, d: 2, grupo: p.g };
+    });
+    prepararOpciones(teoria, seed);
+    var cats = mix ? barajar(Object.keys(PRACTICO.GEN), seed).slice(0, 4) : PRACT_MV[b];
+    var practica = cats.map(function (cat, i) { var it = PRACTICO.generar(cat, seed + i * 977); it.tipo = 'gen'; return it; });
+    var sqlOpt = LAB_SQL.EJERCICIOS.filter(function (e) { return e.g === 'I' && e.tipo === 'consulta'; });
+    practica.push({ tipo: 'codigo', lab: 'sql', e: barajar(sqlOpt, seed)[0], max: 2 });
+    practica.push({ tipo: 'codigo', lab: 'mongo', e: barajar(LAB_MONGO.EJERCICIOS, seed + 1)[0], max: 2 });
+    return { teoria: teoria, practica: practica, inicio: Date.now(), entregado: false, mv: true, bloque: b };
+  }
+  function bloqueDeArg(arg) { if (arg === 'aleatorio') return 'mix'; var n = parseInt(arg, 10); return n >= 1 && n <= 4 ? n - 1 : null; }
+  function vMV(arg) {
+    var b = arg ? bloqueDeArg(arg) : null;
+    if (arg && b === null) return vNoEncontrado();
+    if (b !== null) {
+      if (!EXAMEN_MVA || EXAMEN_MVA.bloque !== b) EXAMEN_MVA = crearExamenMV(b);
+      return '<div class="contenedor estrecho" style="margin-bottom:-8px"><nav class="miga"><a href="#/mv">Examen de prueba</a><span>/</span><span>' + (b === 'mix' ? 'Bloque aleatorio' : 'Bloque ' + (b + 1)) + '</span></nav></div>' + vExamen(EXAMEN_MVA, b === 'mix' ? 'Bloque aleatorio' : 'Bloque ' + (b + 1));
+    }
+    var res = P.mv || {};
+    function tarjeta(id, titulo, desc, uc) {
+      var r = res[id === 'aleatorio' ? 'mix' : (+id - 1)];
+      return '<a class="tarjeta acceso" href="#/mv/' + id + '" style="--uc:' + uc + '"><span class="ico-caja">' + ICON('check') + '</span><h3>' + titulo + '</h3><p>' + desc + '</p>' + (r ? '<p class="peq"><b>Último resultado: ' + r.nota + '/100</b></p>' : '') + '</a>';
+    }
+    return '<div class="contenedor"><div class="encabezado"><h1>Examen de prueba (Mediación Virtual)</h1><p>Las <b>80 preguntas</b> del examen de prueba del curso, repartidas en <b>4 bloques de 20</b> que mezclan temas. Cada bloque incluye además una <b>parte práctica</b> (concurrencia, planificación, respaldo, recuperación, optimización y MongoDB). <b>Sin tiempo</b>: responda y entregue cuando quiera para ver la corrección. Las opciones cambian de orden en cada intento.</p></div>' +
+      '<div class="rejilla">' + [1, 2, 3, 4].map(function (n) {
+        var bl = EXAMEN_MV.BLOQUES[n - 1], cuenta = {};
+        bl.forEach(function (p) { cuenta[p.g] = (cuenta[p.g] || 0) + 1; });
+        return tarjeta(String(n), 'Bloque ' + n, '20 preguntas: ' + Object.keys(cuenta).map(function (g) { return EXAMEN_MV.NOMBRE[g].toLowerCase() + ' (' + cuenta[g] + ')'; }).join(', ') + '. Parte práctica: ' + PRACT_MV[n - 1].map(function (c) { return PRACTICO.GEN[c].titulo.toLowerCase(); }).join(', ') + ', optimización SQL y MongoDB.', 'var(--u' + (n + 4) + ')');
+      }).join('') + tarjeta('aleatorio', 'Bloque aleatorio', '20 preguntas al azar de las 80 y una parte práctica distinta cada vez.', 'var(--u7)') + '</div>' +
+      '<p class="muted peq" style="margin-top:16px">Mediación Virtual no mostraba la clave de respuestas: las respuestas se determinaron con el material del curso. Las preguntas 35, 40, 49 y 56 dependen de artículos de las investigaciones y su explicación lo indica.</p></div>';
   }
 
   /* ------------------------- tema claro / oscuro ------------------------- */
@@ -709,19 +755,21 @@
       case 'progreso': html = vProgreso(); break;
       case 'practico': html = vPractico(arg); sec = 'practicar'; break;
       case 'simulacro': html = vSimulacro(); break;
+      case 'mv': html = vMV(arg); break;
       case 'cobertura': html = vCobertura(); break;
       default: html = vNoEncontrado();
     }
     $main.innerHTML = html;
     pintarIconos($main); decorarCodigo($main);
     document.querySelectorAll('.nav a[data-r]').forEach(function (a) { a.classList.toggle('activo', a.dataset.r === sec); if (a.dataset.r === sec) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-    var titulos = { inicio: 'Inicio', estudiar: 'Estudiar', tema: arg && temaPorId[arg] ? temaPorId[arg].titulo : 'Tema', practicar: 'Practicar', sql: 'Laboratorio SQL', mongo: 'Laboratorio MongoDB', progreso: 'Mi progreso', practico: 'Ejercicio práctico', simulacro: 'Simulacro de examen', cobertura: 'Cobertura del temario' };
+    var titulos = { inicio: 'Inicio', estudiar: 'Estudiar', tema: arg && temaPorId[arg] ? temaPorId[arg].titulo : 'Tema', practicar: 'Practicar', sql: 'Laboratorio SQL', mongo: 'Laboratorio MongoDB', progreso: 'Mi progreso', practico: 'Ejercicio práctico', simulacro: 'Simulacro de examen', mv: 'Examen de prueba', cobertura: 'Cobertura del temario' };
     document.title = (titulos[r] || 'Centro de Estudio') + ' · Centro de Estudio BD II';
     if (r === 'estudiar') $main.querySelectorAll('[data-f]').forEach(function (b) { b.addEventListener('click', function () { filtroUnidad = b.dataset.f; render(); }); });
     if (r === 'tema') { var mb = document.getElementById('marcarLeido'); if (mb) mb.addEventListener('click', function () { if (P.leidos[arg]) delete P.leidos[arg]; else P.leidos[arg] = Date.now(); guardar(); toast(P.leidos[arg] ? 'Tema marcado como estudiado' : 'Marca quitada'); render(); }); }
     if (r === 'practicar' && arg) enlazarQuiz($main);
     if (r === 'practico') enlazarPractico($main, arg);
     if (r === 'simulacro') enlazarSimulacro($main);
+    if (r === 'mv' && arg && EXAMEN_MVA) enlazarExamen($main, EXAMEN_MVA, function () { EXAMEN_MVA = null; });
     if (r === 'sql' || r === 'mongo') enlazarLab($main, r, arg || (($main.querySelector('.ej-item.activo') || { getAttribute: function () { return ''; } }).getAttribute('href') || '').split('/')[2]);
     if (r === 'progreso') { var bb = document.getElementById('borrar'); bb.addEventListener('click', function () { if (!confirmarBorrado) { confirmarBorrado = true; render(); return; } confirmarBorrado = false; P = { leidos: {}, preg: {}, sql: {}, mongo: {}, borr: {}, ultimo: null, simulacros: [] }; guardar(); toast('Progreso borrado'); render(); }); }
     else confirmarBorrado = false;
