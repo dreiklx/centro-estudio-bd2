@@ -590,6 +590,7 @@
         TB(['Propiedad', 'Significa'], [['<b>A</b>tomicidad', 'Todas las operaciones se completan o ninguna se ejecuta'], ['<b>C</b>onsistencia', 'La BD pasa de un estado válido a otro válido'], ['A<b>I</b>slamiento', 'Las transacciones no interfieren entre sí'], ['<b>D</b>urabilidad', 'Una vez confirmados, los cambios permanecen aunque haya fallos']]) +
         TB(['Comando', 'Acción'], [['<code>BEGIN TRANSACTION</code>', 'Inicia una transacción'], ['<code>COMMIT</code>', 'Guarda los cambios'], ['<code>ROLLBACK</code>', 'Revierte todo desde el inicio'], ['<code>SAVE TRANSACTION nombre</code>', 'Crea un punto intermedio (savepoint)'], ['<code>ROLLBACK TRANSACTION nombre</code>', 'Revierte solo hasta ese savepoint']]) +
         '<h2>Ejemplo: transferencia segura</h2>' +
+        '<p>El bloque <code>BEGIN TRY … END TRY</code> ejecuta las operaciones; si alguna produce un error, la ejecución salta a <code>BEGIN CATCH … END CATCH</code>, donde se revierte con ROLLBACK. <code>ERROR_MESSAGE()</code> devuelve el texto del error.</p>' +
         C("BEGIN TRY\n    BEGIN TRANSACTION;\n    UPDATE cuentas SET saldo = saldo - 100 WHERE id = 1;\n    UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2;\n    COMMIT;\nEND TRY\nBEGIN CATCH\n    ROLLBACK;\n    PRINT 'Error: ' + ERROR_MESSAGE();\nEND CATCH") +
         '<h2>Savepoints</h2>' +
         C("BEGIN TRANSACTION;\nUPDATE Productos SET stock = stock - 2 WHERE id_producto = 1;\nSAVE TRANSACTION paso1;\nUPDATE Productos SET stock = stock - 5 WHERE id_producto = 2;\nSAVE TRANSACTION paso2;\nUPDATE Productos SET stock = stock - 100 WHERE id_producto = 3;  -- error simulado\nROLLBACK TRANSACTION paso2;   -- revierte solo lo posterior a paso2\nCOMMIT;") +
@@ -719,8 +720,7 @@
         TB(['Operación', 'Se aborta T si…', 'Si no, se permite y…'], [['T lee X', 'TS(T) &lt; W_TS(X): una transacción de marca mayor ya escribió X', 'R_TS(X) = max(R_TS(X), TS(T))'], ['T escribe X', 'TS(T) &lt; R_TS(X) <b>o</b> TS(T) &lt; W_TS(X): una de marca mayor ya leyó o escribió X', 'W_TS(X) = TS(T)']]) +
         '<h2>Ejemplo de la guía</h2>' +
         TB(['Paso', 'Operación', 'Resultado'], [['Inicial', 'TS(T1) = 5; TS(T2) = 10', 'R_TS(X) = 0; W_TS(X) = 0'], ['1', 'T2 escribe X', '10 ≥ 0 en ambas comprobaciones → W_TS(X) = 10'], ['2', 'T1 intenta leer X', '5 &lt; 10 → <b>se aborta T1</b>']]) +
-        BOX('info', '<b>Clave</b>El problema no es que T2 sea “futura”, sino que tiene marca mayor y ya hizo una escritura incompatible con el orden de T1. Una transacción abortada puede reiniciarse con una <b>nueva marca</b>.') +
-        BOX('tip', '<b>Otras técnicas del programa (5.4)</b>Además de bloqueos y marcas de tiempo, el programa nombra <b>multiversión</b> (leer versiones confirmadas, como SNAPSHOT) y <b>validación</b>.');
+        BOX('info', '<b>Clave</b>El problema no es que T2 sea “futura”, sino que tiene marca mayor y ya hizo una escritura incompatible con el orden de T1. Una transacción abortada puede reiniciarse con una <b>nueva marca</b>.');
     }
   });
 

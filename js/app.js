@@ -113,7 +113,7 @@
     var total = s.temas + s.q + s.sql + s.mongo, hechos = s.leidos + s.qok + s.sqlOk + s.mOk;
     return '<div class="contenedor">' +
       '<section class="hero"><h1>Centro de Estudio · Bases de Datos II</h1>' +
-      '<p>Toda la materia de las Guías #1 a #13, el programa del curso y las investigaciones finales, resumida para estudiar en minutos y practicar con ejercicios que se corrigen solos.</p>' +
+      '<p>La materia del <b>Examen 3</b> (Guías #8 a #13): transacciones y concurrencia, planificación, respaldo y recuperación, optimización de consultas, BD distribuidas y MongoDB. Resumida para estudiar en minutos y practicar con ejercicios que se corrigen solos.</p>' +
       '<div class="acciones">' + (ult ? '<a class="btn primario" href="#/tema/' + ult.id + '">' + ICON('play') + 'Continuar: ' + esc(ult.titulo) + '</a>' : '<a class="btn primario" href="#/estudiar">' + ICON('book') + 'Empezar a estudiar</a>') +
       '<a class="btn" href="#/sql">' + ICON('code') + 'Laboratorio SQL</a><a class="btn" href="#/mongo">' + ICON('leaf') + 'Laboratorio MongoDB</a></div></section>' +
       '<h2>Cómo usar la plataforma</h2><div class="pasos">' +
@@ -146,7 +146,7 @@
       return '<section class="unidad" style="--uc:' + color(u.id) + '"><div class="unidad-cab"><span class="unidad-num">' + u.n + '</span><div><h2>' + esc(u.titulo) + '</h2><small>' + esc(u.desc) + ' · ' + su.leidos + '/' + su.temas + ' estudiados</small></div></div>' +
         '<div class="rejilla">' + TEMAS.filter(function (t) { return t.u === u.id; }).map(tarjetaTema).join('') + '</div></section>';
     }).join('');
-    return '<div class="contenedor"><div class="encabezado"><h1>Estudiar</h1><p>Los temas siguen el orden del programa del curso. Cada uno indica de qué guía proviene. Primero se estudia, después se practica.</p></div>' + chips + html + '</div>';
+    return '<div class="contenedor"><div class="encabezado"><h1>Estudiar</h1><p>Solo los temas del Examen 3 (Guías #8 a #13), en orden. Cada uno indica de qué guía proviene. Primero se estudia, después se practica.</p></div>' + chips + html + '</div>';
   }
   function tarjetaTema(t) {
     var s = statsTema(t.id);
@@ -455,10 +455,10 @@
     filas.sort(function (a, b) { return orden.indexOf(a.doc) - orden.indexOf(b.doc) || a.t.i - b.t.i; });
     var porDoc = {}; filas.forEach(function (f) { porDoc[f.doc] = (porDoc[f.doc] || 0) + 1; });
     return '<div class="contenedor"><div class="encabezado"><h1>Cobertura del temario</h1><p>Matriz que relaciona cada documento de origen con sus temas y subtemas, y la sección de la plataforma donde se estudian. Incluye también la práctica disponible por sección.</p></div>' +
-      '<div class="tarjeta" style="margin-bottom:18px"><div class="chips">' + orden.map(function (d) { return '<span class="chip">' + EST.CORTO[d] + ': ' + (porDoc[d] || 0) + ' entradas</span>'; }).join('') + '</div></div>' +
+      '<div class="tarjeta" style="margin-bottom:18px"><div class="chips">' + orden.filter(function (d) { return porDoc[d]; }).map(function (d) { return '<span class="chip">' + EST.CORTO[d] + ': ' + (porDoc[d] || 0) + ' entradas</span>'; }).join('') + '</div></div>' +
       '<div class="tabla-wrap"><table class="t cob-tabla"><thead><tr><th>Documento de origen</th><th>Tema</th><th>Subtema</th><th>Sección en la plataforma</th><th>Práctica</th></tr></thead><tbody>' +
       filas.map(function (f) { var s = statsTema(f.t.id); return '<tr><td>' + esc(EST.FUENTES[f.doc]) + '</td><td>' + esc(f.tema) + '</td><td>' + esc(f.sub) + '</td><td><a href="#/tema/' + f.t.id + '">Unidad ' + uniPorId[f.t.u].n + ' · ' + esc(f.t.titulo) + '</a></td><td class="peq">' + s.q + ' preg.' + (s.l ? ' · ' + s.l + ' lab.' : '') + '</td></tr>'; }).join('') +
-      '</tbody></table></div><p class="muted peq">Nota: el programa del curso nombra los algoritmos de recuperación por actualización diferida, inmediata, páginas sombra y ARIES (6.2), y la optimización semántica (7.4); las guías no los desarrollan, por lo que la plataforma solo los menciona.</p></div>';
+      '</tbody></table></div><p class="muted peq">Alcance: Guías #8 a #13 (carpeta Bases Examen 3 / Temas de examen).</p></div>';
   }
 
   function vNoEncontrado() { return '<div class="contenedor estrecho"><div class="tarjeta"><h1>No encontrado</h1><p>Esa sección no existe.</p><a class="btn primario" href="#/inicio">Ir al inicio</a></div></div>'; }

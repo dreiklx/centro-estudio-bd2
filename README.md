@@ -2,7 +2,8 @@
 
 Plataforma web de estudio que complementa al videojuego **Servidor Nocturno**. Es una página HTML independiente (HTML, CSS y JavaScript, sin frameworks).
 
-- **Estudiar:** 44 temas en 10 unidades, tomados de las Guías #1 a #13, el programa del curso y el resumen de las investigaciones finales.
+- **Alcance: Examen 3 (Guías #8 a #13).** `js/examen3.js` deja visibles solo esos temas en toda la plataforma.
+- **Estudiar:** 14 temas en 5 unidades: transacciones y concurrencia, planificación, respaldo y recuperación, optimización, BD distribuidas y MongoDB.
 - **Practicar:** solo temas del Examen 3 (Guías #8 a #13): 95 preguntas de selección única, verdadero o falso, aplicación y comprensión, más los ejercicios prácticos generados. Cada una tiene dificultad y explicación.
 - **Ejercicios prácticos generados:** concurrencia, grafo de precedencia, recuperabilidad, marcas de tiempo, cadena de respaldos, recuperación con el log y árboles de consulta. Se crean nuevos cada vez y se corrigen solos.
 - **Simulacro de examen:** de 10 a 20 preguntas teóricas más 10 ejercicios prácticos (concurrencia, planificación, respaldo, recuperación, optimización de consultas y MongoDB), con nota al entregar.
@@ -19,6 +20,7 @@ El punto y coma final, las mayúsculas, los acentos y los espacios no afectan la
 index.html            página principal
 css/estilo.css        estilos
 js/datos-estudio*.js  contenido de estudio y matriz de cobertura
+js/examen3.js         filtra la plataforma a las Guías #8 a #13
 js/datos-preguntas.js preguntas (o[0] = correcta; la app reparte posiciones A-D)
 js/datos-sql.js       bases de práctica y ejercicios SQL
 js/datos-mongo.js     colecciones y ejercicios MongoDB

@@ -31,8 +31,7 @@
         '<h3>Ejemplo</h3>' +
         C("Inicio: A = 100, B = 50\n<T1, A, 100 → 80>\n<T2, B, 50 → 70>\n<T1 COMMIT>\n<T2, B, 70 → 90>\n*** CAÍDA ***", 'txt') +
         '<p>T1 tiene COMMIT → se rehace: <b>A = 80</b>. T2 no tiene COMMIT → se deshacen sus dos escrituras, de la última a la primera: B vuelve a 70 y luego a <b>50</b>.</p>' +
-        BOX('tip', '<b>Regla rápida</b>Valor final de un dato = el de la <b>última escritura confirmada</b>; si ninguna transacción confirmada lo escribió, vuelve a su valor inicial.') +
-        BOX('info', '<b>Lo que nombra el programa (6.2)</b>Algoritmos de recuperación por actualización diferida, actualización inmediata, páginas sombra y ARIES. Las guías no los desarrollan; la idea de rehacer lo confirmado y deshacer lo no confirmado es la que aplica el log WAL de la Guía #8.');
+        BOX('tip', '<b>Regla rápida</b>Valor final de un dato = el de la <b>última escritura confirmada</b>; si ninguna transacción confirmada lo escribió, vuelve a su valor inicial.');
     }
   });
 
@@ -59,8 +58,7 @@
         '<h3>Ejemplo</h3>' +
         TB(['Programa de respaldos', 'Falla'], [['FULL el domingo 00:00 · DIFFERENTIAL de lunes a sábado 00:00 · LOG a las 06:00, 12:00 y 18:00', 'Miércoles 15:00']]) +
         '<p>Se necesitan: FULL del domingo → DIFFERENTIAL del miércoles 00:00 → LOG del miércoles 06:00 → LOG del miércoles 12:00. Los diferenciales del lunes y martes sobran (el del miércoles ya los incluye) y también los LOG anteriores a ese diferencial. Se pierde lo hecho después de las 12:00.</p>' +
-        BOX('warn', '<b>Errores frecuentes</b>Restaurar todos los diferenciales (solo hace falta el último) · omitir un LOG intermedio (la cadena de logs debe estar completa) · olvidar que sin el FULL ningún otro respaldo sirve.') +
-        BOX('tip', '<b>Verifique sus respaldos</b>Las investigaciones recomiendan restaurar la copia en una instancia de prueba y comprobar que el esquema y los registros esperados estén disponibles.');
+        BOX('warn', '<b>Errores frecuentes</b>Restaurar todos los diferenciales (solo hace falta el último) · omitir un LOG intermedio (la cadena de logs debe estar completa) · olvidar que sin el FULL ningún otro respaldo sirve.');
     }
   });
 
