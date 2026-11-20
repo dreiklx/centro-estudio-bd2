@@ -12,6 +12,9 @@
 
   var temaPorId = {}; TEMAS.forEach(function (t, i) { t.i = i; temaPorId[t.id] = t; });
   var uniPorId = {}; UNI.forEach(function (u) { uniPorId[u.id] = u; });
+  // Temas que entran en el Examen 3: Guías #8 a #13 (carpeta 'Bases Examen 3/Temas de examen')
+  var EXAMEN3 = {}; ['transacciones', 'aislamiento', 'planificacion', 'recuperabilidad', 'bloqueos', 'marcas-tiempo', 'fallas-respaldo', 'backup-restore', 'optimizacion-proceso', 'optimizacion-practica', 'bdd-conceptos', 'servidores-vinculados', 'mongo-conceptos', 'mongo-crud'].forEach(function (k) { EXAMEN3[k] = 1; });
+  function preguntasExamen() { return [].concat.apply([], TEMAS.filter(function (t) { return EXAMEN3[t.id]; }).map(function (t) { return PREG[t.id] || []; })); }
   function color(uid) { return 'var(--' + uid + ')'; }
 
   /* ------------------------- progreso ------------------------- */
@@ -120,7 +123,7 @@
       paso(4, 'Mida su avance', 'Revise qué temas domina y cuáles debe repasar.') + '</div>' +
       '<div class="rejilla" style="margin-bottom:22px">' +
       acceso('#/estudiar', 'book', 'u1', 'Estudiar', TEMAS.length + ' temas en ' + UNI.length + ' unidades.') +
-      acceso('#/practicar', 'check', 'u5', 'Practicar', TODAS_PREG.length + ' preguntas por tema y dificultad.') +
+      acceso('#/practicar', 'check', 'u5', 'Practicar', preguntasExamen().length + ' preguntas del Examen 3 (Guías #8 a #13).') +
       acceso('#/sql', 'code', 'u8', 'Laboratorio SQL', LAB_SQL.EJERCICIOS.length + ' ejercicios progresivos.') +
       acceso('#/mongo', 'leaf', 'u9', 'Laboratorio MongoDB', LAB_MONGO.EJERCICIOS.length + ' ejercicios de la Guía #13.') +
       acceso('#/simulacro', 'target', 'u7', 'Simulacro de examen', '10 a 20 preguntas teóricas y ejercicios prácticos, con nota.') +
@@ -160,8 +163,8 @@
       '<nav class="miga" aria-label="Ruta"><a href="#/estudiar">Estudiar</a><span>/</span><span>Unidad ' + u.n + ': ' + esc(u.titulo) + '</span></nav>' +
       '<header class="tema-cab"><div class="chips"><span class="chip u">Unidad ' + u.n + '</span>' + t.fuentes.map(function (f) { return '<span class="chip suave" title="' + esc(EST.FUENTES[f]) + '">' + EST.CORTO[f] + '</span>'; }).join('') + '<span class="chip">' + ICON('clock') + t.min + ' min</span></div><h1>' + esc(t.titulo) + '</h1><p class="muted">' + esc(t.resumen) + '</p></header>' +
       '<article class="tarjeta lectura">' + t.html() + '</article>' +
-      '<div class="tarjeta fin-tema"><div><b>¿Terminó de leer?</b><p class="muted peq" style="margin:0">Márquelo y compruebe lo aprendido con ' + s.q + ' preguntas' + (labs.length ? ' y ' + labs.length + ' ejercicios de código' : '') + '.</p></div>' +
-      '<div class="acciones"><button class="btn' + (s.leido ? ' ok' : '') + '" id="marcarLeido">' + ICON('ok') + (s.leido ? 'Estudiado' : 'Marcar como estudiado') + '</button><a class="btn primario" href="#/practicar/' + id + '">' + ICON('check') + 'Practicar este tema</a></div></div>' +
+      '<div class="tarjeta fin-tema"><div><b>¿Terminó de leer?</b><p class="muted peq" style="margin:0">Márquelo' + (EXAMEN3[id] ? ' y compruebe lo aprendido con ' + s.q + ' preguntas' : '') + '' + (labs.length ? ' y ' + labs.length + ' ejercicios de código' : '') + '.</p></div>' +
+      '<div class="acciones"><button class="btn' + (s.leido ? ' ok' : '') + '" id="marcarLeido">' + ICON('ok') + (s.leido ? 'Estudiado' : 'Marcar como estudiado') + '</button>' + (EXAMEN3[id] ? '<a class="btn primario" href="#/practicar/' + id + '">' + ICON('check') + 'Practicar este tema</a>' : '<span class="chip">No entra en el Examen 3</span>') + '</div></div>' +
       (labs.length ? '<div class="tarjeta"><h3 style="margin-bottom:8px">Ejercicios de código de este tema</h3><div class="chips">' + labs.map(function (l) { return '<a class="chip suave" href="#/' + l.tipo + '/' + l.e.id + '">' + (l.tipo === 'sql' ? 'SQL ' + l.e.g + l.e.n : 'Mongo ' + l.e.n) + ' · ' + esc(l.e.titulo) + '</a>'; }).join('') + '</div></div>' : '') +
       '<nav class="tema-nav" aria-label="Temas">' + (prev ? '<a class="tarjeta" href="#/tema/' + prev.id + '"><small>← Anterior</small><b>' + esc(prev.titulo) + '</b></a>' : '<span></span>') + (next ? '<a class="tarjeta sig" href="#/tema/' + next.id + '"><small>Siguiente →</small><b>' + esc(next.titulo) + '</b></a>' : '<span></span>') + '</nav></div>';
   }
@@ -169,16 +172,16 @@
   /* ------------------------- práctica ------------------------- */
   function vPracticar() {
     var s = statsGlobal();
-    var html = UNI.map(function (u) {
-      return '<section class="unidad" style="--uc:' + color(u.id) + '"><div class="unidad-cab"><span class="unidad-num">' + u.n + '</span><div><h2>' + esc(u.titulo) + '</h2></div></div><div class="tarjeta" style="padding:6px 18px">' +
-        TEMAS.filter(function (t) { return t.u === u.id; }).map(function (t) {
+    var html = UNI.filter(function (u) { return TEMAS.some(function (t) { return t.u === u.id && EXAMEN3[t.id]; }); }).map(function (u) {
+      return '<section class="unidad" style="--uc:' + color(u.id) + '"><div class="unidad-cab"><span class="unidad-num">' + u.n + '</span><div><h2>' + esc(u.id === 'u5' ? 'Transacciones, concurrencia y planificación' : u.titulo) + '</h2></div></div><div class="tarjeta" style="padding:6px 18px">' +
+        TEMAS.filter(function (t) { return t.u === u.id && EXAMEN3[t.id]; }).map(function (t) {
           var x = statsTema(t.id), p = pct(x.qok, x.q);
           return '<div class="prog-fila"><a href="#/practicar/' + t.id + '">' + esc(t.titulo) + (x.leido ? '' : ' <span class="chip" title="Aún no lo marca como estudiado">sin estudiar</span>') + '</a>' + barra(p, color(t.u)) + '<span class="num">' + x.qok + '/' + x.q + '</span></div>';
         }).join('') + '</div></section>';
     }).join('');
-    return '<div class="contenedor"><div class="encabezado"><h1>Practicar</h1><p>Preguntas de selección única, verdadero o falso, comprensión y aplicación, organizadas por tema y dificultad. Todas evalúan lo que se explica en la sección Estudiar.</p></div>' +
+    return '<div class="contenedor"><div class="encabezado"><h1>Practicar</h1><p>Preguntas de selección única, verdadero o falso, comprensión y aplicación, organizadas por tema y dificultad. Solo incluye los temas del <b>Examen 3</b> (Guías #8 a #13) y todo lo que se pregunta se explica en la sección Estudiar.</p></div>' +
       '<div class="tarjeta" style="margin-bottom:22px"><div class="resumen-quiz"><div><h2 style="margin:0">Repaso mixto</h2><p class="muted peq" style="margin:4px 0 0">12 preguntas al azar de los temas que ya marcó como estudiados (o de todos, si aún no marca ninguno).</p></div><a class="btn primario" href="#/practicar/mixta">' + ICON('refresh') + 'Iniciar repaso</a></div>' +
-      '<p class="muted peq" style="margin:12px 0 0">Acertadas en total: <b>' + s.qok + '</b> de ' + s.q + '.</p></div>' +
+      '<p class="muted peq" style="margin:12px 0 0">Acertadas en total: <b>' + preguntasExamen().filter(function (q) { return P.preg[q.id] && P.preg[q.id].ok; }).length + '</b> de ' + preguntasExamen().length + '.</p></div>' +
       '<section class="unidad"><div class="unidad-cab"><span class="unidad-num" style="--uc:var(--u5)">' + ICON('target') + '</span><div><h2>Ejercicios prácticos</h2><small>Se generan nuevos cada vez y se corrigen solos: lo práctico del examen.</small></div></div>' +
       '<div class="rejilla">' + Object.keys(PRACTICO.GEN).map(function (k) { var g = PRACTICO.GEN[k], t = temaPorId[g.tema]; return '<a class="tarjeta acceso" href="#/practico/' + k + '" style="--uc:' + color(t.u) + '"><span class="ico-caja">' + ICON(g.icono) + '</span><h3>' + esc(g.titulo) + '</h3><p>' + esc(g.desc) + '</p></a>'; }).join('') +
       '<a class="tarjeta acceso" href="#/simulacro" style="--uc:var(--u7)"><span class="ico-caja">' + ICON('check') + '</span><h3>Simulacro de examen</h3><p>Teoría más práctica, con nota al final.</p></a></div></section>' +
@@ -189,11 +192,12 @@
   function vQuiz(id) {
     var mixta = id === 'mixta', t = temaPorId[id], lista;
     if (mixta) {
-      var base = Object.keys(P.leidos).filter(function (k) { return temaPorId[k]; });
-      var pool = [].concat.apply([], (base.length ? base : TEMAS.map(function (x) { return x.id; })).map(function (k) { return PREG[k]; }));
+      var base = Object.keys(P.leidos).filter(function (k) { return temaPorId[k] && EXAMEN3[k]; });
+      var pool = [].concat.apply([], (base.length ? base : Object.keys(EXAMEN3)).map(function (k) { return PREG[k]; }));
       lista = barajar(pool, semillaMixta).slice(0, 12);
     } else {
       if (!t) return vNoEncontrado();
+      if (!EXAMEN3[id]) return '<div class="contenedor estrecho"><div class="tarjeta"><h1>Este tema no entra en el Examen 3</h1><p>La práctica incluye solo las Guías #8 a #13. Puede seguir leyendo <a href="#/tema/' + id + '">' + esc(t.titulo) + '</a> en Estudiar.</p><a class="btn primario" href="#/practicar">Ir a Practicar</a></div></div>';
       lista = PREG[id].filter(function (q) { return !filtroDif || q.d === filtroDif; });
     }
     var u = t ? uniPorId[t.u] : null;
@@ -524,7 +528,7 @@
   }
 
   /* ------------------------- simulacro de examen ------------------------- */
-  var TEMAS_EXAMEN = ['transacciones', 'aislamiento', 'planificacion', 'recuperabilidad', 'bloqueos', 'marcas-tiempo', 'fallas-respaldo', 'backup-restore', 'optimizacion-proceso', 'optimizacion-practica', 'bdd-conceptos', 'servidores-vinculados', 'mongo-conceptos', 'mongo-crud', 'inv-fundamentos', 'inv-transacciones', 'inv-frameworks', 'inv-proteccion', 'inv-contenedores', 'inv-nosql', 'inv-redis', 'inv-semantica', 'inv-procesos'];
+  var TEMAS_EXAMEN = Object.keys(EXAMEN3);
   var EXAMEN = null, nTeoria = 15, reloj = null;
   function crearExamen(n) {
     var seed = Date.now() >>> 0;
